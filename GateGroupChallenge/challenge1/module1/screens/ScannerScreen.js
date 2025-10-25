@@ -11,6 +11,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize } from '../../shared/theme/colors';
 import { QRCounterService } from '../services/qrCounterService';
+import { ProductService } from '../../shared/services/productService';
+import { BackendService } from '../services/backendService';
 
 export const ScannerScreen = ({ navigation }) => {
     const [permission, requestPermission] = useCameraPermissions();
@@ -18,6 +20,7 @@ export const ScannerScreen = ({ navigation }) => {
     const [flashEnabled, setFlashEnabled] = useState(false);
     const [lastScan, setLastScan] = useState(null);
     const [isFocused, setIsFocused] = useState(true);
+    const [backendVerification, setBackendVerification] = useState(null);
 
     // Reset camera state when screen is focused/unfocused
     useFocusEffect(
@@ -42,10 +45,29 @@ export const ScannerScreen = ({ navigation }) => {
             const scanRecord = await QRCounterService.recordScan(data);
             setLastScan(scanRecord);
 
-            // Auto-reset after 2 seconds to allow continuous scanning
+            // Verificar con el backend si el producto está vigente o expirado
+            const backendResult = await BackendService.verificarProducto(data);
+            setBackendVerification(backendResult);
+
+            if (backendResult) {
+                console.log('Verificación backend:', backendResult);
+            }
+
+            // Save product to inventory if valid
+            if (scanRecord.isValid && scanRecord.firebaseData) {
+                try {
+                    await ProductService.saveProductFromQR(scanRecord.firebaseData);
+                    console.log('Product saved to inventory');
+                } catch (productError) {
+                    console.error('Error saving product:', productError);
+                }
+            }
+
+            // Auto-reset after 4 seconds to allow continuous scanning
             setTimeout(() => {
                 setScanned(false);
-            }, 2000);
+                setBackendVerification(null);
+            }, 4000);
         } catch (error) {
             console.error('Error processing QR:', error);
             setScanned(false);
@@ -133,6 +155,44 @@ export const ScannerScreen = ({ navigation }) => {
                                         {lastScan.isValid ? 'VERIFIED' : 'INVALID'}
                                     </Text>
                                 </View>
+                                
+                                {/* Backend Verification Status */}
+                                {backendVerification && (
+                                    <View style={[styles.expirationBadge, {
+                                        backgroundColor: backendVerification.status === 'VIGENTE' 
+                                            ? 'rgba(0, 255, 0, 0.2)' 
+                                            : backendVerification.status === 'VENCE HOY'
+                                            ? 'rgba(255, 165, 0, 0.2)'
+                                            : 'rgba(255, 0, 0, 0.2)',
+                                        borderColor: backendVerification.status === 'VIGENTE'
+                                            ? '#00FF00'
+                                            : backendVerification.status === 'VENCE HOY'
+                                            ? '#FFA500'
+                                            : '#FF0000',
+                                    }]}>
+                                        <Text style={[styles.expirationText, {
+                                            color: backendVerification.status === 'VIGENTE'
+                                                ? '#00FF00'
+                                                : backendVerification.status === 'VENCE HOY'
+                                                ? '#FFA500'
+                                                : '#FF0000',
+                                        }]}>
+                                            {backendVerification.status === 'VIGENTE' && '✓ VIGENTE'}
+                                            {backendVerification.status === 'VENCE HOY' && '⚠ VENCE HOY'}
+                                            {backendVerification.status === 'VENCIDO' && '✗ EXPIRADO'}
+                                        </Text>
+                                        {backendVerification.mensaje && (
+                                            <Text style={styles.expirationMessage}>
+                                                {backendVerification.mensaje}
+                                            </Text>
+                                        )}
+                                        {backendVerification.product_name && (
+                                            <Text style={styles.productName}>
+                                                {backendVerification.product_name}
+                                            </Text>
+                                        )}
+                                    </View>
+                                )}
                                 
                                 {lastScan.isValid && lastScan.firebaseData ? (
                                     <View style={styles.dataContainer}>
@@ -419,5 +479,34 @@ const styles = StyleSheet.create({
         fontSize: fontSize.md,
         fontWeight: '700',
         color: colors.surface,
+    },
+    expirationBadge: {
+        width: '100%',
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderRadius: borderRadius.md,
+        borderWidth: 2,
+        marginTop: spacing.md,
+        alignItems: 'center',
+    },
+    expirationText: {
+        fontSize: fontSize.lg,
+        fontWeight: '900',
+        letterSpacing: 2,
+        textAlign: 'center',
+    },
+    expirationMessage: {
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.8)',
+        marginTop: spacing.xs,
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    productName: {
+        fontSize: fontSize.md,
+        color: colors.surface,
+        marginTop: spacing.xs,
+        textAlign: 'center',
+        fontWeight: '600',
     },
 });
