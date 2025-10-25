@@ -18,12 +18,12 @@ import java.util.UUID;
 
 @Service
 public class ImagesService {
-    private static final String BUCKET_NAME = "fir-test-9c66b.appspot.com";
+    private static final String BUCKET_NAME = "ingbot-f8861.appspot.com";
 
     private String uploadFile(File file, String fileName) throws IOException {
         BlobId blobId = BlobId.of(BUCKET_NAME, fileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType("media").build();
-        InputStream inputStream = ImagesService.class.getClassLoader().getResourceAsStream("fir-test-9c66b-firebase-adminsdk-sjm78-cdd1257c66.json");
+        InputStream inputStream = ImagesService.class.getClassLoader().getResourceAsStream("ingbot-f8861-firebase-adminsdk-5dix6-ea6e6c4577.json");
         assert inputStream != null;
         Credentials credentials = GoogleCredentials.fromStream(inputStream);
         Storage storage = StorageOptions.newBuilder().setCredentials(credentials).build().getService();
@@ -87,9 +87,9 @@ public class ImagesService {
     }
 
     private Credentials getCredentials() throws IOException {
-        InputStream inputStream = ImagesService.class.getClassLoader().getResourceAsStream("fir-test-9c66b-firebase-adminsdk-sjm78-cdd1257c66.json");
+        InputStream inputStream = ImagesService.class.getClassLoader().getResourceAsStream("ingbot-f8861-firebase-adminsdk-5dix6-ea6e6c4577.json");
         if (inputStream == null) {
-            throw new IOException("Archivo de credenciales no encontrado: fir-test-9c66b-firebase-adminsdk-sjm78-cdd1257c66.json");
+            throw new IOException("Archivo de credenciales no encontrado: ingbot-f8861-firebase-adminsdk-5dix6-ea6e6c4577.json");
         }
         return GoogleCredentials.fromStream(inputStream);
     }

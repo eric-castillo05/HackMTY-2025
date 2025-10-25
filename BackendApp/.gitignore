@@ -35,3 +35,5 @@ build/
 .env
 
 .idea
+
+src/main/resources/ingbot-f8861-firebase-adminsdk-5dix6-ea6e6c4577.json
