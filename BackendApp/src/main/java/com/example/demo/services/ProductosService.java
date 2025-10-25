@@ -22,9 +22,9 @@ public class ProductosService {
         return productosRepository.save(p);
     }
 
-    // Consultar por URL y verificar estado
-    public Map<String, Object> checkExpiryByUrl(String urlImage) {
-        Optional<Productos> optionalProducto = productosRepository.findByUrlImage(urlImage);
+    // Consultar por UUID y verificar estado (Nombre corregido)
+    public Map<String, Object> checkExpiryByUuid(String uuid_product) { // <-- NOMBRE DEL MÉTODO CORREGIDO
+        Optional<Productos> optionalProducto = productosRepository.findByuuid_product(UUID.fromString(uuid_product));
         Map<String, Object> response = new HashMap<>();
 
         if (optionalProducto.isPresent()) {

@@ -23,6 +23,6 @@ public class ProductosController {
     // Consultar producto por URL
     @GetMapping("/verificar")
     public Map<String, Object> verificarProducto(@RequestParam String url) {
-        return productosService.checkExpiryByUrl(url);
+        return productosService.checkExpiryByUuid(url);
     }
 }
