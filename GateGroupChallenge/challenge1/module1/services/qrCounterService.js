@@ -1,6 +1,6 @@
 // challenge1/module1/services/qrCounterService.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FirebaseService } from './firebaseService';
+import { BackendService } from './backendService';
 
 const QR_SCANS_KEY = '@qr_scans';
 
@@ -22,14 +22,16 @@ export class QRCounterService {
     }
 
     /**
-     * Record a QR scan and verify with Firebase
+     * Record a QR scan and verify with Backend
      * @param {string} qrCode - The scanned QR code
-     * @returns {object} The updated scan record with count and Firebase data
+     * @returns {object} The updated scan record with count and Backend data
      */
     static async recordScan(qrCode) {
         try {
-            // Verify QR code with Firebase
-            const firebaseData = await FirebaseService.verifyQRCode(qrCode);
+            console.log('🔵 QRCounter: Verificando con backend...');
+            // Verify QR code with Backend
+            const backendData = await BackendService.verificarProducto(qrCode);
+            console.log('🔵 QRCounter: backendData recibido:', backendData);
             
             const scans = await this.getAllScans();
             
@@ -38,8 +40,8 @@ export class QRCounterService {
             
             const scanRecord = {
                 qrCode,
-                firebaseData,
-                isValid: firebaseData !== null,
+                backendData,
+                isValid: backendData !== null,
                 lastScanned: new Date().toISOString(),
             };
             
@@ -47,7 +49,7 @@ export class QRCounterService {
                 // Increment count
                 scans[existingIndex].count += 1;
                 scans[existingIndex].lastScanned = scanRecord.lastScanned;
-                scans[existingIndex].firebaseData = firebaseData;
+                scans[existingIndex].backendData = backendData;
                 scans[existingIndex].isValid = scanRecord.isValid;
             } else {
                 // Add new scan

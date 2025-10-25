@@ -116,17 +116,35 @@ export const HistoryScreen = () => {
                 )}
             </View>
             
-            {item.isValid && item.firebaseData && (
+            {item.isValid && item.backendData && (
                 <View style={styles.dataPreview}>
-                    {Object.entries(item.firebaseData).slice(0, 2).map(([key, value]) => {
-                        if (key === 'id' || key === 'code' || key === 'verifiedAt') return null;
-                        return (
-                            <View key={key} style={styles.previewItem}>
-                                <Text style={styles.previewLabel}>{key.toUpperCase()}:</Text>
-                                <Text style={styles.previewValue}>{String(value)}</Text>
-                            </View>
-                        );
-                    })}
+                    {item.backendData.product_name && (
+                        <View style={styles.previewItem}>
+                            <Text style={styles.previewLabel}>PRODUCTO:</Text>
+                            <Text style={styles.previewValue}>{item.backendData.product_name}</Text>
+                        </View>
+                    )}
+                    {item.backendData.quantity && (
+                        <View style={styles.previewItem}>
+                            <Text style={styles.previewLabel}>CANTIDAD:</Text>
+                            <Text style={styles.previewValue}>{item.backendData.quantity}</Text>
+                        </View>
+                    )}
+                    {item.backendData.status && (
+                        <View style={styles.previewItem}>
+                            <Text style={styles.previewLabel}>ESTADO:</Text>
+                            <Text style={[styles.previewValue, {
+                                color: item.backendData.status === 'VIGENTE' ? '#00FF00' : 
+                                       item.backendData.status === 'VENCE HOY' ? '#FFA500' : '#FF0000'
+                            }]}>{item.backendData.status}</Text>
+                        </View>
+                    )}
+                    {item.backendData.expiry_date && (
+                        <View style={styles.previewItem}>
+                            <Text style={styles.previewLabel}>VENCIMIENTO:</Text>
+                            <Text style={styles.previewValue}>{item.backendData.expiry_date}</Text>
+                        </View>
+                    )}
                 </View>
             )}
             

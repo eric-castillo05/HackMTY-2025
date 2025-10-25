@@ -1,59 +1,145 @@
 // challenge1/module1/services/backendService.js
-// Servicio para conectar con el backend Spring Boot
+const API_BASE_URL = 'http://10.22.65.20:8080';
 
-// TODO: Configurar la URL del backend según tu entorno
-const API_BASE_URL = 'https://preformationary-catharine-mispacked.ngrok-free.dev/'; // Cambiar según tu configuración
-
-/**
- * Service to interact with the Spring Boot backend
- */
 export class BackendService {
-    /**
-     * Verifica si un producto está vigente o expirado usando el backend
-     * @param {string} url - URL del producto (puede ser el QR code o batch number)
-     * @returns {object} Respuesta procesada con estado del producto
-     */
-    static async verificarProducto(url) {
+
+    static async verificarProducto(qrData) {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/productos/verificar?url=${encodeURIComponent(url)}`,
-                
-                {
+            console.log('\n🔵 ===== BACKEND SERVICE DEBUG =====');
+            console.log('🔵 [1] QR Data original:', qrData);
+
+            // Extraer UUID del QR
+            let uuidProduct = this.extractUuidFromQR(qrData);
+            console.log('🔵 [2] UUID extraído:', uuidProduct);
+
+            // Construir URL del API
+            const apiUrl = `${API_BASE_URL}/productos/verificar?url=${encodeURIComponent(uuidProduct)}`;
+            console.log('🔵 [3] URL del backend:', apiUrl);
+
+            // Timeout controller
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+            try {
+                console.log('🔵 [4] Enviando petición al backend...');
+
+                const response = await fetch(apiUrl, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    signal: controller.signal,
+                });
+
+                clearTimeout(timeoutId);
+
+                console.log('🔵 [5] Response status:', response.status);
+                console.log('🔵 [6] Response OK:', response.ok);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ [ERROR] Response no OK:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            );
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+                const data = await response.json();
+                console.log('🔵 [7] Data recibida del backend:');
+                console.log(JSON.stringify(data, null, 2));
 
-            const data = await response.json();
-            
-            // Procesar respuesta para incluir campo 'vigente'
-            if (data.error) {
+                // Verificar si hay error en la respuesta
+                if (data.error) {
+                    console.log('⚠️ [WARNING] Backend retornó error:', data.error);
+                    return {
+                        error: data.error,
+                        vigente: false,
+                        mensaje: 'Error: ' + data.error
+                    };
+                }
+
+                // Procesar respuesta exitosa
+                const result = {
+                    ...data,
+                    vigente: data.status === 'VIGENTE',
+                    mensaje: this.getMensajeEstado(data),
+                };
+
+                console.log('✅ [8] Resultado procesado:');
+                console.log(JSON.stringify(result, null, 2));
+                console.log('🔵 ===== FIN BACKEND SERVICE DEBUG =====\n');
+
+                return result;
+
+            } catch (fetchError) {
+                clearTimeout(timeoutId);
+
+                if (fetchError.name === 'AbortError') {
+                    console.error('❌ TIMEOUT: Request timeout después de 60 segundos');
+                    console.error('Backend URL:', apiUrl);
+                    console.error('Tip: Verifica que el backend esté corriendo en', API_BASE_URL);
+                } else {
+                    console.error('❌ FETCH ERROR:', fetchError.message);
+                    console.error('Stack:', fetchError.stack);
+                }
+
                 return null;
             }
 
-            return {
-                ...data,
-                vigente: data.status === 'VIGENTE',
-                mensaje: this.getMensajeEstado(data),
-            };
         } catch (error) {
-            console.error('Error verificando producto en backend:', error);
-            // Si el backend no está disponible, retornamos null
+            console.error('❌ ERROR GENERAL verificando producto:', error);
+            console.error('Stack:', error.stack);
             return null;
         }
     }
 
     /**
-     * Genera mensaje descriptivo según el estado del producto
-     * @param {object} data - Datos del backend
-     * @returns {string} Mensaje descriptivo
+     * Extrae el UUID limpio del QR code
      */
+    static extractUuidFromQR(qrData) {
+        console.log('🔧 Extrayendo UUID de:', qrData);
+
+        let uuid = qrData;
+
+        // Caso 1: URL de Firebase Storage
+        if (qrData.includes('firebasestorage.googleapis.com')) {
+            console.log('🔧 Detectado: Firebase Storage URL');
+
+            // Patrón: /o/UUID.png o /o/UUID?
+            const match = qrData.match(/\/o\/([a-f0-9-]+)(?:\.(png|jpg|jpeg))?(?:\?|$)/i);
+            if (match && match[1]) {
+                uuid = match[1];
+                console.log('🔧 UUID extraído (patrón 1):', uuid);
+            } else {
+                // Patrón alternativo más flexible
+                const match2 = qrData.match(/\/o\/([^\/\?]+)/i);
+                if (match2 && match2[1]) {
+                    uuid = match2[1].replace(/\.(png|jpg|jpeg)$/i, '');
+                    console.log('🔧 UUID extraído (patrón 2):', uuid);
+                }
+            }
+        }
+        // Caso 2: URL con parámetro ?url=
+        else if (qrData.includes('?url=') || qrData.includes('&url=')) {
+            console.log('🔧 Detectado: URL con parámetro url');
+            const urlParams = new URLSearchParams(qrData.split('?')[1]);
+            uuid = urlParams.get('url') || qrData;
+            console.log('🔧 UUID extraído de query param:', uuid);
+        }
+        // Caso 3: Solo UUID (posiblemente con extensión)
+        else {
+            console.log('🔧 Asumiendo UUID directo');
+            uuid = qrData;
+        }
+
+        // Limpiar extensiones finales
+        uuid = uuid.replace(/\.(png|jpg|jpeg|gif|webp)$/i, '');
+
+        // Limpiar espacios
+        uuid = uuid.trim();
+
+        console.log('🔧 UUID final limpio:', uuid);
+        return uuid;
+    }
+
     static getMensajeEstado(data) {
         switch (data.status) {
             case 'VIGENTE':
@@ -63,17 +149,14 @@ export class BackendService {
             case 'VENCIDO':
                 return `Vencido hace ${data.days_overdue} día${data.days_overdue !== 1 ? 's' : ''}`;
             default:
-                return data.status;
+                return data.status || 'Estado desconocido';
         }
     }
 
-    /**
-     * Inserta un nuevo producto en el backend
-     * @param {object} producto - Objeto con los datos del producto
-     * @returns {object} Producto insertado
-     */
     static async insertarProducto(producto) {
         try {
+            console.log('📤 Insertando producto:', producto);
+
             const response = await fetch(
                 `${API_BASE_URL}/productos/insertar`,
                 {
@@ -86,32 +169,42 @@ export class BackendService {
             );
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Error insertando:', errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('✅ Producto insertado:', data);
             return data;
+
         } catch (error) {
-            console.error('Error insertando producto en backend:', error);
+            console.error('❌ Error insertando producto:', error);
             throw error;
         }
     }
 
-    /**
-     * Verifica el estado de conexión con el backend
-     * @returns {boolean} true si el backend está disponible
-     */
     static async checkConnection() {
         try {
-            const response = await fetch(`${API_BASE_URL}/productos/verificar?url=test`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            return response.ok || response.status === 404; // 404 es válido, significa que el backend responde
+            console.log('🔌 Verificando conexión con backend...');
+
+            const response = await fetch(
+                `${API_BASE_URL}/productos/verificar?url=test-connection`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            const isConnected = response.ok || response.status === 404;
+            console.log(isConnected ? '✅ Backend disponible' : '❌ Backend NO disponible');
+
+            return isConnected;
+
         } catch (error) {
-            console.error('Backend no disponible:', error);
+            console.error('❌ Backend no disponible:', error.message);
             return false;
         }
     }

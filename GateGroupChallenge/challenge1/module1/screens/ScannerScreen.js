@@ -41,22 +41,28 @@ export const ScannerScreen = ({ navigation }) => {
         Vibration.vibrate(100);
 
         try {
+            console.log('📱 Scanner: QR escaneado:', data);
+            
             // Record the scan and get count
             const scanRecord = await QRCounterService.recordScan(data);
+            console.log('📱 Scanner: scanRecord recibido:', JSON.stringify(scanRecord, null, 2));
+            
             setLastScan(scanRecord);
 
-            // Verificar con el backend si el producto está vigente o expirado
-            const backendResult = await BackendService.verificarProducto(data);
-            setBackendVerification(backendResult);
+            // El backendData ya viene en scanRecord desde qrCounterService
+            console.log('📱 Scanner: backendData:', scanRecord.backendData);
+            setBackendVerification(scanRecord.backendData);
 
-            if (backendResult) {
-                console.log('Verificación backend:', backendResult);
+            if (scanRecord.backendData) {
+                console.log('📱 Scanner:  Verificación backend exitosa:', scanRecord.backendData);
+            } else {
+                console.log('📱 Scanner:  No hay backendData');
             }
 
             // Save product to inventory if valid
-            if (scanRecord.isValid && scanRecord.firebaseData) {
+            if (scanRecord.isValid && scanRecord.backendData) {
                 try {
-                    await ProductService.saveProductFromQR(scanRecord.firebaseData);
+                    await ProductService.saveProductFromQR(scanRecord.backendData);
                     console.log('Product saved to inventory');
                 } catch (productError) {
                     console.error('Error saving product:', productError);
@@ -181,46 +187,43 @@ export const ScannerScreen = ({ navigation }) => {
                                             {backendVerification.status === 'VENCE HOY' && '⚠ VENCE HOY'}
                                             {backendVerification.status === 'VENCIDO' && '✗ EXPIRADO'}
                                         </Text>
-                                        {backendVerification.mensaje && (
-                                            <Text style={styles.expirationMessage}>
-                                                {backendVerification.mensaje}
-                                            </Text>
-                                        )}
+                                        
                                         {backendVerification.product_name && (
                                             <Text style={styles.productName}>
                                                 {backendVerification.product_name}
                                             </Text>
                                         )}
-                                    </View>
-                                )}
-                                
-                                {lastScan.isValid && lastScan.firebaseData ? (
-                                    <View style={styles.dataContainer}>
-                                        <Text style={styles.dataLabel}>QR CODE</Text>
-                                        <Text style={styles.dataValue} numberOfLines={1}>
-                                            {lastScan.qrCode}
-                                        </Text>
                                         
-                                        {Object.entries(lastScan.firebaseData).map(([key, value]) => {
-                                            if (key === 'id' || key === 'code' || key === 'verifiedAt') return null;
-                                            return (
-                                                <View key={key}>
-                                                    <Text style={styles.dataLabel}>{key.toUpperCase()}</Text>
-                                                    <Text style={styles.dataValue}>{String(value)}</Text>
-                                                </View>
-                                            );
-                                        })}
-                                        
-                                        <View style={styles.scanInfo}>
-                                            <Text style={styles.scanCount}>SCAN #{lastScan.count}</Text>
-                                            {lastScan.count > 1 && (
-                                                <View style={styles.repeatIndicator}>
-                                                    <Text style={styles.repeatText}>DUPLICATE</Text>
-                                                </View>
+                                        <View style={styles.backendDataContainer}>
+                                            {backendVerification.quantity && (
+                                                <Text style={styles.backendDataText}>
+                                                    Cantidad: {backendVerification.quantity}
+                                                </Text>
+                                            )}
+                                            {backendVerification.days_left !== undefined && backendVerification.status === 'VIGENTE' && (
+                                                <Text style={styles.backendDataText}>
+                                                    {backendVerification.days_left} días restantes
+                                                </Text>
+                                            )}
+                                            {backendVerification.expiry_date && (
+                                                <Text style={styles.backendDataText}>
+                                                    Vence: {backendVerification.expiry_date}
+                                                </Text>
                                             )}
                                         </View>
                                     </View>
-                                ) : (
+                                )}
+                                
+                                <View style={styles.scanInfo}>
+                                    <Text style={styles.scanCount}>SCAN #{lastScan.count}</Text>
+                                    {lastScan.count > 1 && (
+                                        <View style={styles.repeatIndicator}>
+                                            <Text style={styles.repeatText}>DUPLICATE</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                
+                                {!backendVerification && lastScan.isValid === false && (
                                     <View style={styles.dataContainer}>
                                         <Text style={styles.errorText}>QR CODE NOT FOUND</Text>
                                         <Text style={styles.errorSubtext}>Code not registered in system</Text>
@@ -508,5 +511,19 @@ const styles = StyleSheet.create({
         marginTop: spacing.xs,
         textAlign: 'center',
         fontWeight: '600',
+    },
+    backendDataContainer: {
+        marginTop: spacing.md,
+        paddingTop: spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.2)',
+        width: '100%',
+    },
+    backendDataText: {
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.9)',
+        textAlign: 'center',
+        marginTop: spacing.xs,
+        letterSpacing: 0.5,
     },
 });
