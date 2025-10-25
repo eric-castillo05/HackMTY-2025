@@ -40,6 +40,7 @@ public class ProductosService {
             response.put("expiry_date", expiry);
             response.put("quantity", producto.getQuantity());
             response.put("url_image", producto.getUrlImage());
+            response.put("uuid", producto.getUuidProduct());
 
             if (daysDiff < 0) {
                 // Producto vencido → actualizar lote completo y productos
