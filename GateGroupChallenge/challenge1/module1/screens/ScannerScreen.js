@@ -1,5 +1,5 @@
 // challenge1/module1/screens/ScannerScreen.js
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -8,6 +8,7 @@ import {
     Vibration,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize } from '../../shared/theme/colors';
 import { QRCounterService } from '../services/qrCounterService';
 
@@ -16,6 +17,19 @@ export const ScannerScreen = ({ navigation }) => {
     const [scanned, setScanned] = useState(false);
     const [flashEnabled, setFlashEnabled] = useState(false);
     const [lastScan, setLastScan] = useState(null);
+    const [isFocused, setIsFocused] = useState(true);
+
+    // Reset camera state when screen is focused/unfocused
+    useFocusEffect(
+        useCallback(() => {
+            setIsFocused(true);
+            setScanned(false);
+            
+            return () => {
+                setIsFocused(false);
+            };
+        }, [])
+    );
 
     const handleBarCodeScanned = async ({ type, data }) => {
         if (scanned) return;
@@ -66,15 +80,16 @@ export const ScannerScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <CameraView
-                style={styles.camera}
-                facing="back"
-                enableTorch={flashEnabled}
-                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-                barcodeScannerSettings={{
-                    barcodeTypes: ['qr'],
-                }}
-            >
+            {isFocused && (
+                <CameraView
+                    style={styles.camera}
+                    facing="back"
+                    enableTorch={flashEnabled}
+                    onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                    barcodeScannerSettings={{
+                        barcodeTypes: ['qr'],
+                    }}
+                >
                 {/* Overlay */}
                 <View style={styles.overlay}>
                     {/* Top Section */}
@@ -159,7 +174,8 @@ export const ScannerScreen = ({ navigation }) => {
                         )}
                     </View>
                 </View>
-            </CameraView>
+                </CameraView>
+            )}
         </View>
     );
 };
