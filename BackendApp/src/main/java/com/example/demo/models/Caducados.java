@@ -1,22 +1,17 @@
-package models;
+package com.example.demo.models;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 @AllArgsConstructor
-@RequiredArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @ToString
 @Entity
 @Table(name = "caducados")
-public class caducados {
-    @Id
-    @Column(name = "uuid_product")
-    @OneToOne
-    @JoinColumn(name = "productos",referencedColumnName = "uuid_product")
-    private Productos uuid_product;
+public class Caducados {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -25,5 +20,9 @@ public class caducados {
             strategy = "org.hibernate.id.UUIDGenerator"
     )
     @Column(name = "uuid_caducados", nullable = false, updatable = false)
-    String uuid_caducados;
+    private String uuidCaducados;
+
+    @OneToOne
+    @JoinColumn(name = "uuid_product", referencedColumnName = "uuid_product", nullable = false)
+    private Productos producto;
 }

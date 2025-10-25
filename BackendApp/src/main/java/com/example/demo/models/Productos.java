@@ -1,4 +1,4 @@
-package models;
+package com.example.demo.models;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +13,6 @@ import java.util.Date;
 @ToString
 @Entity
 @Table(name = "productos")
-
 public class Productos {
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -22,24 +21,23 @@ public class Productos {
             strategy = "org.hibernate.id.UUIDGenerator"
     )
     @Column(name = "uuid_product", nullable = false, updatable = false)
-    String uuid_product;
+    private String uuid_product;
 
-    @Column(name = "product_id", nullable = false, length=254 )
-    String product_id;
+    @Column(name = "product_id", nullable = false, length = 254)
+    private String product_id;
 
-    @Column(name = "product_name", nullable = false, length=254 )
-    String product_name;
+    @Column(name = "product_name", nullable = false, length = 254)
+    private String product_name;
 
-    @Column(name = "lots_name", nullable = false, length=254 )
-    String lots_name;
+    @Column(name = "lots_name", nullable = false, length = 254)
+    private String lots_name;
 
-    @Column(name = "spiry_date", nullable = false)
-    Date expiry_date;
+    @Column(name = "expiry_date", nullable = false)  // Fixed typo
+    private Date expiry_date;
 
     @Column(name = "quantity", nullable = false)
-    int quantity;
+    private int quantity;
 
     @Column(name = "url_image", nullable = false)
-    String url_image;
-
+    private String url_image;
 }

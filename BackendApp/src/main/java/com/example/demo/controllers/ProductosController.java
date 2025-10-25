@@ -1,9 +1,9 @@
-package controllers;
+package com.example.demo.controllers;
 
-import models.Productos;
+import com.example.demo.models.Productos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import services.ProductosService;
+import com.example.demo.services.ProductosService;
 
 import java.util.Map;
 

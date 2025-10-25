@@ -1,9 +1,9 @@
-package services;
+package com.example.demo.services;
 
-import models.Productos;
+import com.example.demo.models.Productos;
+import com.example.demo.repository.ProductosRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import repository.ProductosRepository;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
