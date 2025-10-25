@@ -1,22 +1,17 @@
 // challenge1/module1/navigation/Module1Navigator.js
 import React from 'react';
 import { Text } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { colors, fontSize } from '../../shared/theme/colors';
 
 // Screens
-import { HomeScreen } from '../screens/HomeScreen';
-import { RegisterLotScreen } from '../screens/RegisterLotScreen';
 import { ScannerScreen } from '../screens/ScannerScreen';
-import { InventoryScreen } from '../screens/InventoryScreen';
-import { ProductDetailScreen } from '../screens/ProductDetailScreen';
+import { HistoryScreen } from '../screens/HistoryScreen';
 
-const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab Navigator (Home, Inventory, Scanner)
-const TabNavigator = () => {
+// Main Tab Navigator - Solo Scanner e Historial
+export const Module1Navigator = () => {
     return (
         <Tab.Navigator
             screenOptions={{
@@ -43,76 +38,27 @@ const TabNavigator = () => {
             }}
         >
             <Tab.Screen
-                name="Home"
-                component={HomeScreen}
-                options={{
-                    title: 'Inicio',
-                    tabBarIcon: ({ color, size }) => (
-                        <Text style={{ fontSize: size, color }}>🏠</Text>
-                    ),
-                    headerTitle: 'GateGroup Inventory',
-                }}
-            />
-            <Tab.Screen
                 name="Scanner"
                 component={ScannerScreen}
                 options={{
-                    title: 'Escanear',
+                    title: 'SCANNER',
                     tabBarIcon: ({ color, size }) => (
-                        <Text style={{ fontSize: size, color }}>📷</Text>
+                        <Text style={{ fontSize: size - 4, color, fontWeight: 'bold' }}>□</Text>
                     ),
                     headerShown: false,
                 }}
             />
             <Tab.Screen
-                name="Inventory"
-                component={InventoryScreen}
+                name="History"
+                component={HistoryScreen}
                 options={{
-                    title: 'Inventario',
+                    title: 'HISTORY',
                     tabBarIcon: ({ color, size }) => (
-                        <Text style={{ fontSize: size, color }}>📋</Text>
+                        <Text style={{ fontSize: size - 4, color, fontWeight: 'bold' }}>≡</Text>
                     ),
+                    headerTitle: 'SCAN HISTORY',
                 }}
             />
         </Tab.Navigator>
-    );
-};
-
-// Main Stack Navigator
-export const Module1Navigator = () => {
-    return (
-        <Stack.Navigator
-            screenOptions={{
-                headerStyle: {
-                    backgroundColor: colors.surface,
-                },
-                headerTintColor: colors.text,
-                headerTitleStyle: {
-                    fontWeight: '700',
-                },
-                headerBackTitle: 'Atrás',
-            }}
-        >
-            <Stack.Screen
-                name="Tabs"
-                component={TabNavigator}
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen
-                name="RegisterLot"
-                component={RegisterLotScreen}
-                options={{
-                    title: 'Registrar Lote',
-                    presentation: 'modal',
-                }}
-            />
-            <Stack.Screen
-                name="ProductDetail"
-                component={ProductDetailScreen}
-                options={{
-                    title: 'Detalle del Producto',
-                }}
-            />
-        </Stack.Navigator>
     );
 };

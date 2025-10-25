@@ -1,21 +1,21 @@
 // challenge1/module1/screens/ScannerScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
-    Alert,
     Vibration,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { colors, spacing, borderRadius, fontSize } from '../../shared/theme/colors';
-import { StorageService } from '../services/storageService';
+import { QRCounterService } from '../services/qrCounterService';
 
 export const ScannerScreen = ({ navigation }) => {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [flashEnabled, setFlashEnabled] = useState(false);
+    const [lastScan, setLastScan] = useState(null);
 
     const handleBarCodeScanned = async ({ type, data }) => {
         if (scanned) return;
@@ -24,36 +24,17 @@ export const ScannerScreen = ({ navigation }) => {
         Vibration.vibrate(100);
 
         try {
-            // Try to find product by QR code
-            const product = await StorageService.getProductByQR(data);
+            // Record the scan and get count
+            const scanRecord = await QRCounterService.recordScan(data);
+            setLastScan(scanRecord);
 
-            if (product) {
-                // Product found - navigate to detail
-                navigation.navigate('ProductDetail', { productId: product.id });
-            } else {
-                // Product not found
-                Alert.alert(
-                    '❌ Producto No Encontrado',
-                    'El código QR escaneado no corresponde a ningún producto registrado.',
-                    [
-                        {
-                            text: 'Escanear Otro',
-                            onPress: () => setScanned(false),
-                        },
-                        {
-                            text: 'Registrar Producto',
-                            onPress: () => navigation.navigate('RegisterLot'),
-                        },
-                    ]
-                );
-            }
+            // Auto-reset after 2 seconds to allow continuous scanning
+            setTimeout(() => {
+                setScanned(false);
+            }, 2000);
         } catch (error) {
             console.error('Error processing QR:', error);
-            Alert.alert(
-                'Error',
-                'No se pudo procesar el código QR. Intenta nuevamente.',
-                [{ text: 'OK', onPress: () => setScanned(false) }]
-            );
+            setScanned(false);
         }
     };
 
@@ -100,23 +81,18 @@ export const ScannerScreen = ({ navigation }) => {
                     <View style={styles.topSection}>
                         <View style={styles.header}>
                             <TouchableOpacity
-                                style={styles.backButton}
-                                onPress={() => navigation.goBack()}
-                            >
-                                <Text style={styles.backButtonText}>← Atrás</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
                                 style={styles.flashButton}
                                 onPress={() => setFlashEnabled(!flashEnabled)}
                             >
                                 <Text style={styles.flashIcon}>
-                                    {flashEnabled ? '💡' : '🔦'}
+                                    {flashEnabled ? '●' : '○'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.title}>Escanear Producto</Text>
+                        <Text style={styles.title}>QR SCANNER</Text>
+                        <Text style={styles.subtitle}>AVIATION VERIFICATION SYSTEM</Text>
                         <Text style={styles.instructions}>
-                            Centra el código QR en el recuadro
+                            Align QR code within the frame
                         </Text>
                     </View>
 
@@ -132,16 +108,53 @@ export const ScannerScreen = ({ navigation }) => {
 
                     {/* Bottom Section */}
                     <View style={styles.bottomSection}>
-                        {scanned ? (
-                            <TouchableOpacity
-                                style={styles.scanAgainButton}
-                                onPress={() => setScanned(false)}
-                            >
-                                <Text style={styles.scanAgainText}>🔄 Escanear Otro</Text>
-                            </TouchableOpacity>
+                        {lastScan ? (
+                            <View style={styles.resultContainer}>
+                                <View style={styles.statusBadge}>
+                                    <View style={[styles.statusIndicator, { 
+                                        backgroundColor: lastScan.isValid ? '#00FF00' : '#FF0000' 
+                                    }]} />
+                                    <Text style={styles.statusText}>
+                                        {lastScan.isValid ? 'VERIFIED' : 'INVALID'}
+                                    </Text>
+                                </View>
+                                
+                                {lastScan.isValid && lastScan.firebaseData ? (
+                                    <View style={styles.dataContainer}>
+                                        <Text style={styles.dataLabel}>QR CODE</Text>
+                                        <Text style={styles.dataValue} numberOfLines={1}>
+                                            {lastScan.qrCode}
+                                        </Text>
+                                        
+                                        {Object.entries(lastScan.firebaseData).map(([key, value]) => {
+                                            if (key === 'id' || key === 'code' || key === 'verifiedAt') return null;
+                                            return (
+                                                <View key={key}>
+                                                    <Text style={styles.dataLabel}>{key.toUpperCase()}</Text>
+                                                    <Text style={styles.dataValue}>{String(value)}</Text>
+                                                </View>
+                                            );
+                                        })}
+                                        
+                                        <View style={styles.scanInfo}>
+                                            <Text style={styles.scanCount}>SCAN #{lastScan.count}</Text>
+                                            {lastScan.count > 1 && (
+                                                <View style={styles.repeatIndicator}>
+                                                    <Text style={styles.repeatText}>DUPLICATE</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <View style={styles.dataContainer}>
+                                        <Text style={styles.errorText}>QR CODE NOT FOUND</Text>
+                                        <Text style={styles.errorSubtext}>Code not registered in system</Text>
+                                    </View>
+                                )}
+                            </View>
                         ) : (
                             <Text style={styles.hint}>
-                                Apunta la cámara al código QR del producto
+                                Ready to scan
                             </Text>
                         )}
                     </View>
@@ -177,20 +190,9 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         alignItems: 'center',
         marginBottom: spacing.xl,
-    },
-    backButton: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderRadius: borderRadius.md,
-    },
-    backButtonText: {
-        color: colors.surface,
-        fontSize: fontSize.md,
-        fontWeight: '600',
     },
     flashButton: {
         width: 44,
@@ -201,17 +203,29 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     flashIcon: {
-        fontSize: fontSize.xl,
+        fontSize: fontSize.lg,
+        color: colors.surface,
+        fontWeight: 'bold',
     },
     title: {
-        fontSize: fontSize.xxl,
-        fontWeight: '700',
+        fontSize: fontSize.xxxl,
+        fontWeight: '900',
         color: colors.surface,
+        letterSpacing: 2,
         marginBottom: spacing.xs,
     },
+    subtitle: {
+        fontSize: fontSize.xs,
+        fontWeight: '600',
+        color: colors.primary,
+        letterSpacing: 1.5,
+        marginBottom: spacing.md,
+    },
     instructions: {
-        fontSize: fontSize.md,
-        color: 'rgba(255,255,255,0.8)',
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.7)',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     middleSection: {
         flex: 2,
@@ -265,20 +279,102 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
     },
     hint: {
-        fontSize: fontSize.md,
-        color: 'rgba(255,255,255,0.8)',
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.6)',
         textAlign: 'center',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
-    scanAgainButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: spacing.xl,
-        paddingVertical: spacing.md,
-        borderRadius: borderRadius.md,
+    resultContainer: {
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: spacing.lg,
     },
-    scanAgainText: {
-        fontSize: fontSize.lg,
+    statusBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.sm,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
+    },
+    statusIndicator: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: spacing.sm,
+    },
+    statusText: {
+        fontSize: fontSize.md,
         fontWeight: '700',
         color: colors.surface,
+        letterSpacing: 1.5,
+    },
+    dataContainer: {
+        width: '100%',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        padding: spacing.md,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    dataLabel: {
+        fontSize: fontSize.xs,
+        fontWeight: '600',
+        color: colors.primary,
+        marginTop: spacing.sm,
+        marginBottom: 2,
+        letterSpacing: 1,
+    },
+    dataValue: {
+        fontSize: fontSize.md,
+        fontWeight: '500',
+        color: colors.surface,
+        marginBottom: spacing.xs,
+    },
+    scanInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: spacing.md,
+        paddingTop: spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.1)',
+    },
+    scanCount: {
+        fontSize: fontSize.sm,
+        fontWeight: '700',
+        color: 'rgba(255,255,255,0.8)',
+        letterSpacing: 1,
+    },
+    repeatIndicator: {
+        backgroundColor: colors.warning + '30',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 4,
+        borderRadius: borderRadius.sm,
+        borderWidth: 1,
+        borderColor: colors.warning,
+    },
+    repeatText: {
+        fontSize: fontSize.xs,
+        fontWeight: '700',
+        color: colors.warning,
+        letterSpacing: 1,
+    },
+    errorText: {
+        fontSize: fontSize.lg,
+        fontWeight: '700',
+        color: colors.error,
+        textAlign: 'center',
+        marginBottom: spacing.xs,
+    },
+    errorSubtext: {
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.6)',
+        textAlign: 'center',
     },
     emoji: {
         fontSize: 64,
