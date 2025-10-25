@@ -1,5 +1,5 @@
 package com.example.demo.models;
-
+import java.util.UUID;
 import com.example.demo.utils.STATUS;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,13 +16,13 @@ import java.util.Date;
 @Table(name = "productos")
 public class Productos {
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(
-            name = "uuid2",
-            strategy = "org.hibernate.id.UUIDGenerator"
-    )
+//    @GeneratedValue(generator = "uuid4")
+//    @GenericGenerator(
+//            name = "uuid4",
+//            strategy = "org.hibernate.id.UUIDGenerator"
+//    )
     @Column(name = "uuid_product", nullable = false, updatable = false)
-    private String uuid_product;
+    private UUID uuid_product;
 
     @Column(name = "product_id", nullable = false, length = 254)
     private String product_id;
@@ -47,4 +47,11 @@ public class Productos {
 
     @Column(name = "mlg", nullable = false, length = 2)
     String mlg;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.uuid_product == null) {
+            this.uuid_product = UUID.randomUUID();
+        }
+    }
 }

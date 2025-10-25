@@ -3,6 +3,7 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 import lombok.*;
 import com.example.demo.utils.SEGMENTOS;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.util.Date;
 
@@ -16,9 +17,13 @@ import java.util.Date;
 public class Vendido {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "uuid")
-    private String uuid;
+    @GeneratedValue(generator = "uuid4")
+    @GenericGenerator(
+            name = "uuid4",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "uuid_vendido")
+    private String uuid_vendido;
 
     @Column(name = "flight_id", nullable = false)
     private String flightId;

@@ -14,9 +14,9 @@ import org.hibernate.annotations.GenericGenerator;
 public class Caducados {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
+    @GeneratedValue(generator = "uuid4")
     @GenericGenerator(
-            name = "uuid2",
+            name = "uuid4",
             strategy = "org.hibernate.id.UUIDGenerator"
     )
     @Column(name = "uuid_caducados", nullable = false, updatable = false)
