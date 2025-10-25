@@ -23,6 +23,6 @@ public class Caducados {
     private String uuidCaducados;
 
     @OneToOne
-    @JoinColumn(name = "uuid_product", referencedColumnName = "uuid_product", nullable = false)
+    @JoinColumn(name = "uuidProduct", referencedColumnName = "uuidProduct", nullable = false)
     private Productos producto;
 }

@@ -44,7 +44,7 @@ public class Vendido {
 
     // Reference the PRIMARY KEY instead
     @ManyToOne
-    @JoinColumn(name = "uuid_product", referencedColumnName = "uuid_product", nullable = false)
+    @JoinColumn(name = "uuidProduct", referencedColumnName = "uuidProduct", nullable = false)
     private Productos producto;
 
     @Column(name = "standar_specification_qty", nullable = false)

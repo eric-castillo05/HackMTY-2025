@@ -12,8 +12,7 @@ import java.util.UUID;
 
 @Repository
 public interface ProductosRepository extends JpaRepository<Productos, String> {
-    @Query("SELECT p FROM Productos p WHERE p.uuid_product = :uuidParam")
-    Optional<Productos> findByuuid_product(@Param("uuidParam") UUID uuid);
+    Optional<Productos> findByUuidProduct(UUID uuid);  // Spring Data will auto-generate this
     List<Productos> findByLotsName(String lotsName);
 
 }

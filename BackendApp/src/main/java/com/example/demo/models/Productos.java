@@ -16,13 +16,8 @@ import java.util.Date;
 @Table(name = "productos")
 public class Productos {
     @Id
-//    @GeneratedValue(generator = "uuid4")
-//    @GenericGenerator(
-//            name = "uuid4",
-//            strategy = "org.hibernate.id.UUIDGenerator"
-//    )
-    @Column(name = "uuid_product", nullable = false, updatable = false)
-    private UUID uuid_product;
+    @Column(name = "uuidProduct", nullable = false, updatable = false)
+    private UUID uuidProduct;
 
     @Column(name = "product_id", nullable = false, length = 254)
     private String product_id;
@@ -50,8 +45,8 @@ public class Productos {
 
     @PrePersist
     public void prePersist() {
-        if (this.uuid_product == null) {
-            this.uuid_product = UUID.randomUUID();
+        if (this.uuidProduct == null) {
+            this.uuidProduct = UUID.randomUUID();
         }
     }
 }
