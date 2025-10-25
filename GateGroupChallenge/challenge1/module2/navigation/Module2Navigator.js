@@ -20,6 +20,18 @@ const MenuButton = () => {
   );
 };
 
+const BackButton = () => {
+  const navigation = useNavigation();
+  return (
+    <TouchableOpacity
+      onPress={() => navigation.goBack()}
+      style={{ marginLeft: 16 }}
+    >
+      <Text style={{ fontSize: 24, color: colors.surface, fontWeight: '600' }}>←</Text>
+    </TouchableOpacity>
+  );
+};
+
 export const Module2Navigator = () => {
   return (
     <Stack.Navigator
@@ -41,15 +53,15 @@ export const Module2Navigator = () => {
         name="Dashboard" 
         component={DashboardScreen}
         options={{
-          title: 'Freshness Prediction',
+          title: 'Airplane Food Freshness',
         }}
       />
       <Stack.Screen 
         name="PredictionDetails" 
         component={PredictionDetailsScreen}
         options={{
-          title: 'Product Details',
-          headerLeft: null,
+          title: 'Meal Details',
+          headerLeft: () => <BackButton />,
         }}
       />
     </Stack.Navigator>

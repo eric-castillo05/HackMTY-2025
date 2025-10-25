@@ -27,29 +27,29 @@ export const PredictionDetailsScreen = ({ route }) => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Product Information</Text>
+        <Text style={styles.sectionTitle}>Meal Information</Text>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>SKU:</Text>
           <Text style={styles.infoValue}>{prediction.sku || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Category:</Text>
+          <Text style={styles.infoLabel}>Type:</Text>
           <Text style={styles.infoValue}>{prediction.category || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Location:</Text>
+          <Text style={styles.infoLabel}>Storage Location:</Text>
           <Text style={styles.infoValue}>{prediction.location || 'N/A'}</Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Prediction</Text>
+        <Text style={styles.sectionTitle}>Quality Prediction</Text>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Days remaining:</Text>
           <Text style={styles.infoValue}>{prediction.daysRemaining || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Expiry date:</Text>
+          <Text style={styles.infoLabel}>Best before:</Text>
           <Text style={styles.infoValue}>{prediction.expiryDate || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
@@ -64,7 +64,7 @@ export const PredictionDetailsScreen = ({ route }) => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommendations</Text>
+        <Text style={styles.sectionTitle}>Service Recommendations</Text>
         {prediction.recommendations ? (
           prediction.recommendations.map((rec, index) => (
             <View key={index} style={styles.recommendationItem}>

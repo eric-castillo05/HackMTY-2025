@@ -46,8 +46,8 @@ export const DashboardScreen = ({ navigation }) => {
       }
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Freshness Dashboard</Text>
-        <Text style={styles.subtitle}>Real-time predictions</Text>
+        <Text style={styles.title}>Airplane Meal Freshness</Text>
+        <Text style={styles.subtitle}>Real-time quality monitoring</Text>
       </View>
 
       {alerts.length > 0 && (
@@ -64,11 +64,11 @@ export const DashboardScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.predictionsSection}>
-        <Text style={styles.sectionTitle}>Monitored Products</Text>
+        <Text style={styles.sectionTitle}>Monitored Meals</Text>
         {loading ? (
           <Text style={styles.loadingText}>Loading...</Text>
         ) : predictions.length === 0 ? (
-          <Text style={styles.emptyText}>No predictions available</Text>
+          <Text style={styles.emptyText}>No meal data available</Text>
         ) : (
           predictions.map((prediction) => (
             <PredictionCard
