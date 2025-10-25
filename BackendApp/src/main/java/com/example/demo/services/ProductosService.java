@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import com.example.demo.models.Productos;
 import com.example.demo.repository.ProductosRepository;
+import com.example.demo.utils.STATUS;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,17 +25,15 @@ public class ProductosService {
     // Consultar por URL y verificar estado
     public Map<String, Object> checkExpiryByUrl(String urlImage) {
         Optional<Productos> optionalProducto = productosRepository.findByUrlImage(urlImage);
-
         Map<String, Object> response = new HashMap<>();
 
         if (optionalProducto.isPresent()) {
             Productos producto = optionalProducto.get();
             Date expiryDate = producto.getExpiry_date();
 
-            // Convertir a LocalDate para manejar fechas fácilmente
+            // Convertir a LocalDate
             LocalDate expiry = expiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             LocalDate today = LocalDate.now();
-
             long daysDiff = ChronoUnit.DAYS.between(today, expiry);
 
             response.put("product_name", producto.getProduct_name());
@@ -43,8 +42,18 @@ public class ProductosService {
             response.put("url_image", producto.getUrlImage());
 
             if (daysDiff < 0) {
+                // Producto vencido → actualizar lote completo y productos
                 response.put("status", "VENCIDO");
                 response.put("days_overdue", Math.abs(daysDiff));
+
+                // Obtener todos los productos del mismo lote
+                List<Productos> productosLote = productosRepository.findByLotsName(producto.getLotsName());
+
+                for (Productos p : productosLote) {
+                    p.setStatus(STATUS.valueOf("CADUCADO"));  // suponiendo que existe el campo 'status'
+                    productosRepository.save(p);
+                }
+
             } else if (daysDiff == 0) {
                 response.put("status", "VENCE HOY");
                 response.put("days_left", 0);
