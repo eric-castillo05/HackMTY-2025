@@ -58,6 +58,14 @@ export const CustomDrawerContent = (props) => {
           isActive={currentRoute === 'Module2'}
           onPress={() => navigation.navigate('Module2')}
         />
+
+        <ModuleItem
+          icon="📝"
+          title="Module 3"
+          subtitle="Scanner Register"
+          isActive={currentRoute === 'Module3'}
+          onPress={() => navigation.navigate('Module3')}
+        />
       </View>
 
       <View style={styles.footer}>

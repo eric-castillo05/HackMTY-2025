@@ -2,6 +2,7 @@ import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Module1Navigator } from '../../module1';
 import { Module2Navigator } from '../../module2';
+import { Module3Navigator } from '../../../challenge2/module3';
 import { CustomDrawerContent } from './CustomDrawerContent';
 import { colors } from '../theme/colors';
 
@@ -46,6 +47,14 @@ export const DrawerNavigator = () => {
         options={{
           headerShown: false,
           title: 'Module 2',
+        }}
+      />
+      <Drawer.Screen
+        name="Module3"
+        component={Module3Navigator}
+        options={{
+          headerShown: false,
+          title: 'Module 3',
         }}
       />
     </Drawer.Navigator>
