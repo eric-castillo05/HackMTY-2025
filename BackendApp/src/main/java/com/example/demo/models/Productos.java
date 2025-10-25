@@ -38,6 +38,6 @@ public class Productos {
     @Column(name = "quantity", nullable = false)
     private int quantity;
 
-    @Column(name = "url_image", nullable = false)
-    private String url_image;
+    @Column(name = "urlImage", nullable = false)
+    private String urlImage;
 }

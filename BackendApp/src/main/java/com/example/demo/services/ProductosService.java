@@ -40,7 +40,7 @@ public class ProductosService {
             response.put("product_name", producto.getProduct_name());
             response.put("expiry_date", expiry);
             response.put("quantity", producto.getQuantity());
-            response.put("url_image", producto.getUrl_image());
+            response.put("url_image", producto.getUrlImage());
 
             if (daysDiff < 0) {
                 response.put("status", "VENCIDO");
