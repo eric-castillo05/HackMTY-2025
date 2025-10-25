@@ -1,7 +1,8 @@
 // challenge1/module1/navigation/Module1Navigator.js
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
 import { colors, fontSize } from '../../shared/theme/colors';
 
 // Screens
@@ -9,6 +10,18 @@ import { ScannerScreen } from '../screens/ScannerScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 
 const Tab = createBottomTabNavigator();
+
+const MenuButton = () => {
+    const navigation = useNavigation();
+    return (
+        <TouchableOpacity
+            onPress={() => navigation.openDrawer()}
+            style={{ marginLeft: 16 }}
+        >
+            <Text style={{ fontSize: 24, color: colors.surface, fontWeight: '600' }}>☰</Text>
+        </TouchableOpacity>
+    );
+};
 
 // Main Tab Navigator - Solo Scanner e Historial
 export const Module1Navigator = () => {
@@ -29,34 +42,38 @@ export const Module1Navigator = () => {
                     fontWeight: '600',
                 },
                 headerStyle: {
-                    backgroundColor: colors.surface,
+                    backgroundColor: colors.primary,
+                    elevation: 4,
+                    shadowOpacity: 0.3,
                 },
-                headerTintColor: colors.text,
+                headerTintColor: colors.surface,
                 headerTitleStyle: {
-                    fontWeight: '700',
+                    fontWeight: '600',
+                    fontSize: 18,
                 },
+                headerLeft: () => <MenuButton />,
             }}
         >
             <Tab.Screen
                 name="Scanner"
                 component={ScannerScreen}
                 options={{
-                    title: 'SCANNER',
+                    title: 'Scanner',
+                    headerTitle: 'QR Scanner',
                     tabBarIcon: ({ color, size }) => (
                         <Text style={{ fontSize: size - 4, color, fontWeight: 'bold' }}>□</Text>
                     ),
-                    headerShown: false,
                 }}
             />
             <Tab.Screen
                 name="History"
                 component={HistoryScreen}
                 options={{
-                    title: 'HISTORY',
+                    title: 'History',
+                    headerTitle: 'Scan History',
                     tabBarIcon: ({ color, size }) => (
                         <Text style={{ fontSize: size - 4, color, fontWeight: 'bold' }}>≡</Text>
                     ),
-                    headerTitle: 'SCAN HISTORY',
                 }}
             />
         </Tab.Navigator>
