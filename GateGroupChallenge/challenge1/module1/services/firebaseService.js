@@ -4,6 +4,9 @@
 // import { initializeApp } from 'firebase/app';
 // import { getFirestore, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 
+// MOCK DATA FOR DEVELOPMENT - Remove when Firebase is configured
+import { generateMockProductData } from './mockProductData';
+
 // TODO: Replace with your Firebase config
 // Uncomment when Firebase is installed
 /*
@@ -32,8 +35,26 @@ export class FirebaseService {
      * @returns {object|null} QR data if found, null otherwise
      */
     static async verifyQRCode(qrCode) {
-        throw new Error('Firebase not configured. Install firebase package and uncomment imports.');
-        /* Uncomment when Firebase is installed
+        // TEMPORARY: Using mock data until Firebase is configured
+        try {
+            const productData = generateMockProductData(qrCode);
+            
+            if (productData) {
+                return {
+                    id: productData.batchNumber,
+                    code: qrCode,
+                    ...productData,
+                    verifiedAt: new Date().toISOString(),
+                };
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error verifying QR code:', error);
+            return null;
+        }
+        
+        /* TODO: Uncomment when Firebase is installed
         try {
             // Query the 'qr_codes' collection for the scanned code
             const q = query(
