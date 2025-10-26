@@ -1,11 +1,33 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { FreshnessChart } from '../components/FreshnessChart';
+import { HistoryTable, DataTable } from '../components/DataTable';
+import { PredictionService } from '../services/predictionService';
 
 export const PredictionDetailsScreen = ({ route }) => {
   const { prediction, demandPrediction } = route.params;
+  const [detailedData, setDetailedData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const getFreshnessColor = (score) => {
+  useEffect(() => {
+    if (prediction.id) {
+      loadDetailedPrediction();
+    }
+  }, [prediction.id]);
+
+  const loadDetailedPrediction = async () => {
+    try {
+      setLoading(true);
+      const data = await PredictionService.getPredictionById(prediction.id);
+      setDetailedData(data);
+    } catch (error) {
+      console.error('Error loading detailed prediction:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getScoreColor = (score) => {
     if (score >= 80) return '#4CAF50';
     if (score >= 50) return '#FF9800';
     return '#F44336';
@@ -14,80 +36,105 @@ export const PredictionDetailsScreen = ({ route }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.productName}>{prediction.productName}</Text>
+        <Text style={styles.productName}>{prediction.productName || prediction.sku}</Text>
         <View 
           style={[
             styles.scoreContainer, 
-            { backgroundColor: getFreshnessColor(prediction.freshnessScore) }
+            { backgroundColor: getScoreColor(prediction.predictabilityScore || prediction.freshnessScore || 0) }
           ]}
         >
-          <Text style={styles.scoreText}>{prediction.freshnessScore}%</Text>
-          <Text style={styles.scoreLabel}>Freshness</Text>
+          <Text style={styles.scoreText}>
+            {prediction.predictabilityScore || prediction.freshnessScore || 0}%
+          </Text>
+          <Text style={styles.scoreLabel}>
+            {prediction.predictabilityScore ? 'Predictability' : 'Freshness'}
+          </Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Meal Information</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Batch Number:</Text>
-          <Text style={styles.infoValue}>{prediction.batchNumber || 'N/A'}</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Product Information</Text>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>SKU:</Text>
           <Text style={styles.infoValue}>{prediction.sku || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Type:</Text>
+          <Text style={styles.infoLabel}>Category:</Text>
           <Text style={styles.infoValue}>{prediction.category || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Weight:</Text>
-          <Text style={styles.infoValue}>{prediction.weight ? `${prediction.weight}g` : 'N/A'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Quantity:</Text>
-          <Text style={styles.infoValue}>{prediction.quantity || 'N/A'} units</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Storage Location:</Text>
+          <Text style={styles.infoLabel}>Location:</Text>
           <Text style={styles.infoValue}>{prediction.location || 'N/A'}</Text>
         </View>
-        {prediction.flightNumber && (
+        {prediction.totalPredicted && (
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Flight:</Text>
-            <Text style={styles.infoValue}>{prediction.flightNumber}</Text>
+            <Text style={styles.infoLabel}>Total Predicted:</Text>
+            <Text style={styles.infoValue}>{prediction.totalPredicted.toLocaleString()} units</Text>
+          </View>
+        )}
+        {prediction.avgDailyConsumption && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Avg Daily:</Text>
+            <Text style={styles.infoValue}>{prediction.avgDailyConsumption.toFixed(1)} units/day</Text>
+          </View>
+        )}
+        {prediction.maxConsumption && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Max Consumption:</Text>
+            <Text style={styles.infoValue}>{prediction.maxConsumption} units</Text>
+          </View>
+        )}
+        {prediction.minConsumption !== undefined && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Min Consumption:</Text>
+            <Text style={styles.infoValue}>{prediction.minConsumption} units</Text>
           </View>
         )}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quality Information</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Production Date:</Text>
-          <Text style={styles.infoValue}>
-            {prediction.productionDate ? new Date(prediction.productionDate).toLocaleDateString() : 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Best before:</Text>
-          <Text style={styles.infoValue}>
-            {prediction.expirationDate ? new Date(prediction.expirationDate).toLocaleDateString() : 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Days remaining:</Text>
-          <Text style={styles.infoValue}>{prediction.daysRemaining !== null ? prediction.daysRemaining : 'N/A'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Temperature:</Text>
-          <Text style={styles.infoValue}>{prediction.temperature ? `${prediction.temperature}°C` : 'N/A'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Risk Level:</Text>
-          <Text style={[styles.infoValue, {color: getFreshnessColor(prediction.freshnessScore)}]}>
-            {(prediction.riskLevel || 'unknown').toUpperCase()}
-          </Text>
-        </View>
+        <Text style={styles.sectionTitle}>Prediction Metrics</Text>
+        {prediction.startDate && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Forecast Start:</Text>
+            <Text style={styles.infoValue}>{prediction.startDate}</Text>
+          </View>
+        )}
+        {prediction.endDate && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Forecast End:</Text>
+            <Text style={styles.infoValue}>{prediction.endDate}</Text>
+          </View>
+        )}
+        {prediction.daysForecasted && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Days Forecasted:</Text>
+            <Text style={styles.infoValue}>{prediction.daysForecasted} days</Text>
+          </View>
+        )}
+        {prediction.trend && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Trend:</Text>
+            <Text style={[
+              styles.infoValue, 
+              { color: prediction.trendPercentage > 0 ? '#4CAF50' : '#F44336' }
+            ]}>
+              {prediction.trend} ({prediction.trendPercentage > 0 ? '+' : ''}{prediction.trendPercentage}%)
+            </Text>
+          </View>
+        )}
+        {prediction.variability !== undefined && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Variability:</Text>
+            <Text style={styles.infoValue}>{prediction.variability.toFixed(1)}%</Text>
+          </View>
+        )}
+        {prediction.confidence && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Model Confidence:</Text>
+            <Text style={styles.infoValue}>{prediction.confidence}%</Text>
+          </View>
+        )}
       </View>
 
       {demandPrediction && (
@@ -119,10 +166,40 @@ export const PredictionDetailsScreen = ({ route }) => {
         </View>
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Freshness History</Text>
-        <FreshnessChart data={prediction.history || []} />
-      </View>
+      {/* Consumption History Table */}
+      {loading ? (
+        <View style={styles.section}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Loading detailed data...</Text>
+        </View>
+      ) : (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Consumption Forecast</Text>
+          {(detailedData?.history || prediction.history) && (
+            <HistoryTable history={detailedData?.history || prediction.history} />
+          )}
+          {(!detailedData?.history && !prediction.history) && (
+            <Text style={styles.noDataText}>No historical data available</Text>
+          )}
+        </View>
+      )}
+
+      {/* Summary Statistics */}
+      {detailedData && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Summary Statistics</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{detailedData.total_predicted?.toLocaleString()}</Text>
+              <Text style={styles.statLabel}>Total Predicted</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{detailedData.avg_daily?.toFixed(1)}</Text>
+              <Text style={styles.statLabel}>Avg Daily</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Service Recommendations</Text>
@@ -292,5 +369,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#333',
     fontWeight: '500',
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 12,
+    fontSize: 14,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 16,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2196F3',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
 });

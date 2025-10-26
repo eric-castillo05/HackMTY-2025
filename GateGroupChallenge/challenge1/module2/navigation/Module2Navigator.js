@@ -53,7 +53,7 @@ export const Module2Navigator = () => {
         name="Dashboard" 
         component={DashboardScreen}
         options={{
-          title: 'Airplane Food Freshness',
+          title: 'Forecast de Consumo',
         }}
       />
       <Stack.Screen 
