@@ -41,7 +41,7 @@ export const RegisterLotScreen = ({ navigation }) => {
 
     const validateForm = () => {
         if (!formData.productName.trim() || !formData.lotNumber.trim() || !formData.quantity || parseInt(formData.quantity) <= 0) {
-            Alert.alert('Campos Requeridos', 'Por favor completa todos los campos obligatorios correctamente.');
+            Alert.alert('Required Fields', 'Please ensure all required fields are correctly completed.');
             return false;
         }
         return true;
@@ -62,7 +62,6 @@ export const RegisterLotScreen = ({ navigation }) => {
 
         setLoading(true);
         try {
-            // Generar UUID v4 para el producto
             const generateUUID = () => {
                 return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                     const r = Math.random() * 16 | 0;
@@ -71,7 +70,6 @@ export const RegisterLotScreen = ({ navigation }) => {
                 });
             };
 
-            // Formatear datos según el esquema requerido
             const productData = {
                 product_id: `PRD-${Date.now()}`,
                 uuidProduct: generateUUID(),
@@ -80,7 +78,7 @@ export const RegisterLotScreen = ({ navigation }) => {
                 expiry_date: formData.expiryDate.toISOString(),
                 quantity: formData.quantity,
                 urlImage: '',
-                status: 'VIGENTE',
+                status: 'VALID',
                 mlg: formData.unit,
             };
 
@@ -97,8 +95,8 @@ export const RegisterLotScreen = ({ navigation }) => {
                 await StorageService.saveProduct(productToSave);
                 
                 Alert.alert(
-                    '¡Éxito!',
-                    'El producto ha sido registrado correctamente en la base de datos.',
+                    'Success!',
+                    'Product registered successfully.',
                     [
                         {
                             text: 'OK',
@@ -115,8 +113,8 @@ export const RegisterLotScreen = ({ navigation }) => {
                 
                 if (savedProduct) {
                     Alert.alert(
-                        'Guardado Localmente',
-                        `No se pudo conectar con el servidor, pero el producto se guardó localmente.\n\nError: ${apiResponse.error}`,
+                        'Partial Success',
+                        `Unable to connect to the server; the product has been saved locally.\n\nError: ${apiResponse.error}`,
                         [
                             {
                                 text: 'OK',
@@ -128,11 +126,11 @@ export const RegisterLotScreen = ({ navigation }) => {
                         ]
                     );
                 } else {
-                    Alert.alert('Error', 'No se pudo registrar el producto ni localmente.');
+                    Alert.alert('Error', 'Failed to save the product locally.');
                 }
             }
         } catch (error) {
-            Alert.alert('Error', 'Ocurrió un error inesperado al registrar el producto.');
+            Alert.alert('Error', 'An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -146,18 +144,18 @@ export const RegisterLotScreen = ({ navigation }) => {
         >
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <View style={styles.header}>
-                <Text style={styles.title}>Registrar Nuevo Lote</Text>
+                <Text style={styles.title}>Register New Batch</Text>
                 <Text style={styles.subtitle}>
-                    Completa la información del producto
+                    Complete the product information below to register a new batch in the inventory.
                 </Text>
             </View>
 
             {/* Product Name */}
             <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nombre del Producto *</Text>
+                <Text style={styles.label}>Product Name *</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Ej: Pechuga de Pollo Premium"
+                    placeholder="Ex: Premium Chicken Breast"
                     placeholderTextColor={colors.textLight}
                     value={formData.productName}
                     onChangeText={(text) => updateField('productName', text)}
@@ -166,10 +164,10 @@ export const RegisterLotScreen = ({ navigation }) => {
 
             {/* Lot Number */}
             <View style={styles.inputGroup}>
-                <Text style={styles.label}>Número de Lote *</Text>
+                <Text style={styles.label}>Batch Number *</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Ej: LOT-A-2024-10"
+                    placeholder="Ex: LOT-A-2024-10"
                     placeholderTextColor={colors.textLight}
                     value={formData.lotNumber}
                     onChangeText={(text) => updateField('lotNumber', text)}
@@ -179,7 +177,7 @@ export const RegisterLotScreen = ({ navigation }) => {
 
             {/* Expiry Date */}
             <View style={styles.inputGroup}>
-                <Text style={styles.label}>Fecha de Expiración *</Text>
+                <Text style={styles.label}>Expiration Date *</Text>
                 <TouchableOpacity
                     style={styles.dateButton}
                     onPress={() => setShowDatePicker(true)}
@@ -201,7 +199,7 @@ export const RegisterLotScreen = ({ navigation }) => {
 
             {/* Quantity */}
             <View style={styles.inputGroup}>
-                <Text style={styles.label}>Cantidad *</Text>
+                <Text style={styles.label}>Quantity *</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="12"
@@ -214,7 +212,7 @@ export const RegisterLotScreen = ({ navigation }) => {
 
             {/* Unit Selection */}
             <View style={styles.inputGroup}>
-                <Text style={styles.label}>Unidad de Medida *</Text>
+                <Text style={styles.label}>Unit of Measure *</Text>
                 <View style={styles.unitContainer}>
                     <TouchableOpacity
                         style={[
@@ -229,7 +227,7 @@ export const RegisterLotScreen = ({ navigation }) => {
                                 formData.unit === 'ml' && styles.unitButtonTextActive,
                             ]}
                         >
-                            Mililitros (ml)
+                            Mililiters (ml)
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -245,7 +243,7 @@ export const RegisterLotScreen = ({ navigation }) => {
                                 formData.unit === 'mg' && styles.unitButtonTextActive,
                             ]}
                         >
-                            Miligramos (mg)
+                            Miligrams (mg)
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -258,12 +256,12 @@ export const RegisterLotScreen = ({ navigation }) => {
                 disabled={loading}
             >
                 <Text style={styles.submitButtonText}>
-                    {loading ? 'Registrando...' : 'Registrar Producto'}
+                    {loading ? 'Saving...' : 'Register Product'}
                 </Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
-                <Text style={styles.footerText}>* Campos requeridos</Text>
+                <Text style={styles.footerText}>* Required Fields</Text>
             </View>
         </ScrollView>
         </KeyboardAvoidingView>

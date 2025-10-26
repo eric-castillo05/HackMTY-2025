@@ -33,15 +33,15 @@ export const ScannerScreen = ({ navigation }) => {
             } else {
                 // Product not found
                 Alert.alert(
-                    '❌ Producto No Encontrado',
-                    'El código QR escaneado no corresponde a ningún producto registrado.',
+                    'Product Not Found',
+                    'The scanned product is not registered in the inventory.',
                     [
                         {
-                            text: 'Escanear Otro',
+                            text: 'Scan Again',
                             onPress: () => setScanned(false),
                         },
                         {
-                            text: 'Registrar Producto',
+                            text: 'Register Product',
                             onPress: () => navigation.navigate('RegisterLot'),
                         },
                     ]
@@ -51,7 +51,7 @@ export const ScannerScreen = ({ navigation }) => {
             console.error('Error processing QR:', error);
             Alert.alert(
                 'Error',
-                'No se pudo procesar el código QR. Intenta nuevamente.',
+                'An error occurred while processing the scanned QR code. Try again.',
                 [{ text: 'OK', onPress: () => setScanned(false) }]
             );
         }
@@ -60,7 +60,7 @@ export const ScannerScreen = ({ navigation }) => {
     if (!permission) {
         return (
             <View style={styles.centerContainer}>
-                <Text style={styles.message}>Solicitando permiso de cámara...</Text>
+                <Text style={styles.message}>Camera permission request...</Text>
             </View>
         );
     }
@@ -69,15 +69,15 @@ export const ScannerScreen = ({ navigation }) => {
         return (
             <View style={styles.centerContainer}>
                 <Text style={styles.emoji}>📷</Text>
-                <Text style={styles.message}>Sin acceso a la cámara</Text>
+                <Text style={styles.message}>Camera access denied</Text>
                 <Text style={styles.description}>
-                    Por favor, habilita los permisos de cámara en la configuración
+                    To scan product QR codes, please enable camera access.
                 </Text>
                 <TouchableOpacity
                     style={styles.permissionButton}
                     onPress={requestPermission}
                 >
-                    <Text style={styles.permissionButtonText}>Solicitar Permiso</Text>
+                    <Text style={styles.permissionButtonText}>Request Permission</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -103,7 +103,7 @@ export const ScannerScreen = ({ navigation }) => {
                                 style={styles.backButton}
                                 onPress={() => navigation.goBack()}
                             >
-                                <Text style={styles.backButtonText}>← Atrás</Text>
+                                <Text style={styles.backButtonText}>← Back</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.flashButton}
@@ -114,9 +114,9 @@ export const ScannerScreen = ({ navigation }) => {
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.title}>Escanear Producto</Text>
+                        <Text style={styles.title}>Scan Product</Text>
                         <Text style={styles.instructions}>
-                            Centra el código QR en el recuadro
+                            Align the QR code within the frame to scan
                         </Text>
                     </View>
 
@@ -137,11 +137,11 @@ export const ScannerScreen = ({ navigation }) => {
                                 style={styles.scanAgainButton}
                                 onPress={() => setScanned(false)}
                             >
-                                <Text style={styles.scanAgainText}>🔄 Escanear Otro</Text>
+                                <Text style={styles.scanAgainText}>🔄Scan again</Text>
                             </TouchableOpacity>
                         ) : (
                             <Text style={styles.hint}>
-                                Apunta la cámara al código QR del producto
+                                Point the camera at a product QR code to scan
                             </Text>
                         )}
                     </View>

@@ -37,7 +37,7 @@ export class StorageService {
                 expiry_date: product.expiry_date,
                 quantity: product.quantity,
                 urlImage: product.urlImage || '',
-                status: product.status || 'VIGENTE',
+                status: product.status || 'VALID',
                 mlg: product.mlg || 'ml', // 'ml' o 'mg'
             };
             
@@ -68,7 +68,7 @@ export class StorageService {
                     expiry_date: updatedProduct.expiry_date,
                     quantity: updatedProduct.quantity,
                     urlImage: updatedProduct.urlImage || '',
-                    status: updatedProduct.status || 'VIGENTE',
+                    status: updatedProduct.status || 'VALID',
                     mlg: updatedProduct.mlg || 'ml',
                 };
                 

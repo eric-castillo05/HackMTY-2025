@@ -20,7 +20,7 @@ export class ProductService {
             lotsName: formData.lotNumber,
             quantity: formData.quantity.toString(),
             expiry_date: expiryDateISO,
-            status: daysLeft >= 0 ? 'VIGENTE' : 'VENCIDO',
+            status: daysLeft >= 0 ? 'VALID' : 'EXPIRED',
             mlg: formData.unit || 'ml',
         };
 
