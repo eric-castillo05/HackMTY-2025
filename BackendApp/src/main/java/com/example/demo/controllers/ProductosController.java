@@ -1,6 +1,7 @@
 package com.example.demo.controllers;
 
 import com.example.demo.models.Productos;
+import org.checkerframework.common.util.report.qual.ReportUnqualified;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.services.ProductosService;
@@ -24,5 +25,10 @@ public class ProductosController {
     @GetMapping("/verificar")
     public Map<String, Object> verificarProducto(@RequestParam String url) {
         return productosService.checkExpiryByUuid(url);
+    }
+
+    @GetMapping("/salida")
+    public Map<String, Object> salidaProducto(@RequestParam String url) {
+        return productosService.checkExitProduct(url);
     }
 }

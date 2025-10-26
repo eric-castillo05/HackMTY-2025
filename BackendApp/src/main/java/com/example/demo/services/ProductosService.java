@@ -1,7 +1,12 @@
 package com.example.demo.services;
 
+import com.example.demo.models.Caducados;
 import com.example.demo.models.Productos;
+import com.example.demo.models.Vendido;
+import com.example.demo.repository.CaducadosRepository;
 import com.example.demo.repository.ProductosRepository;
+import com.example.demo.repository.VendidoRepository;
+import com.example.demo.utils.SEGMENTOS;
 import com.example.demo.utils.STATUS;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +21,12 @@ public class ProductosService {
 
     @Autowired
     private ProductosRepository productosRepository;
+
+    @Autowired
+    private VendidoRepository vendidoRepository;
+    @Autowired
+    private CaducadosRepository caducadosRepository;
+
 
     // Crear o insertar producto
     public Productos saveProducto(Productos p) {
@@ -53,6 +64,10 @@ public class ProductosService {
                 for (Productos p : productosLote) {
                     p.setStatus(STATUS.valueOf("CADUCADO"));  // suponiendo que existe el campo 'status'
                     productosRepository.save(p);
+
+                    Caducados caducado = new Caducados();
+                    caducado.setProducto(p);
+                    caducadosRepository.save(caducado);
                 }
 
             } else if (daysDiff == 0) {
@@ -66,6 +81,56 @@ public class ProductosService {
         } else {
             response.put("error", "Producto no encontrado");
         }
+
+        return response;
+    }
+
+    public Map<String, Object> checkExitProduct(String uuid_product) {
+        Map<String, Object> response = new HashMap<>();
+        Optional<Productos> optionalProducto = productosRepository.findByUuidProduct(UUID.fromString(uuid_product));
+
+        if (optionalProducto.isEmpty()) {
+            response.put("error", "Producto no encontrado");
+            return response;
+        }
+
+        Productos producto = optionalProducto.get();
+        Date expiryDate = producto.getExpiry_date();
+        LocalDate expiry = expiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate today = LocalDate.now();
+        long daysDiff = ChronoUnit.DAYS.between(today, expiry);
+
+        if (daysDiff < 0) {
+            producto.setStatus(STATUS.CADUCADO);
+            productosRepository.save(producto);
+            response.put("status", "CADUCADO");
+            response.put("message", "El producto está caducado y no puede ser vendido.");
+            return response;
+        }
+
+        Vendido vendido = new Vendido();
+        vendido.setProducto(producto);
+
+        vendido.setFlightId("FL-" + UUID.randomUUID().toString().substring(0, 6));
+        vendido.setOrigin("Almacén Central");
+        vendido.setFlightType(new Date());
+        vendido.setSegmentos(SEGMENTOS.RETAIL);
+        vendido.setPassengersCount(0);
+        vendido.setStandarSpecificationQty(1);
+        vendido.setQuantityReturned(0);
+        vendido.setQuantityConsumed(1);
+        vendido.setUnitCost(10.5f);
+        vendido.setCrewFeedback("Producto vigente. Agregado correctamente a 'vendido'.");
+
+        vendidoRepository.save(vendido);
+
+        response.put("status", "VIGENTE");
+        response.put("message", "Producto vigente. Agregado correctamente a la tabla 'vendido'.");
+        response.put("uuid_vendido", vendido.getUuid_vendido());
+        response.put("product_name", producto.getProduct_name());
+        response.put("expiry_date", expiry);
+        response.put("days_left", daysDiff);
+        response.put("segmento", vendido.getSegmentos().name());
 
         return response;
     }
