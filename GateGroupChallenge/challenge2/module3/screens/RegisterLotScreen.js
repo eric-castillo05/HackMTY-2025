@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
-import { ProductService } from '../services/productService';
+import { StorageService } from '../services/storageService';
 
 export const RegisterLotScreen = ({ navigation }) => {
     const [formData, setFormData] = useState({
@@ -20,6 +20,7 @@ export const RegisterLotScreen = ({ navigation }) => {
         lotNumber: '',
         expiryDate: new Date(),
         quantity: '',
+        unit: 'ml', // 'ml' o 'mg'
     });
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -57,6 +58,7 @@ export const RegisterLotScreen = ({ navigation }) => {
             lotNumber: '',
             expiryDate: new Date(),
             quantity: '',
+            unit: 'ml',
         });
     };
 
@@ -65,11 +67,22 @@ export const RegisterLotScreen = ({ navigation }) => {
 
         setLoading(true);
         try {
-            const product = await ProductService.createProduct(formData);
+            // Formatear datos según el esquema requerido
+            const productData = {
+                product_id: `PRD-${Date.now()}`,
+                product_name: formData.productName,
+                lotsName: formData.lotNumber,
+                expiry_date: formData.expiryDate.toISOString(),
+                quantity: formData.quantity,
+                status: 'VIGENTE',
+                mlg: formData.unit,
+            };
+
+            const savedProduct = await StorageService.saveProduct(productData);
 
             Alert.alert(
                 'Producto Registrado',
-                `${product.productName} ha sido registrado exitosamente`,
+                `${savedProduct.product_name} ha sido registrado exitosamente`,
                 [
                     {
                         text: 'Registrar Otro',
@@ -158,6 +171,45 @@ export const RegisterLotScreen = ({ navigation }) => {
                 />
             </View>
 
+            {/* Unit Selection */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.label}>Unidad de Medida *</Text>
+                <View style={styles.unitContainer}>
+                    <TouchableOpacity
+                        style={[
+                            styles.unitButton,
+                            formData.unit === 'ml' && styles.unitButtonActive,
+                        ]}
+                        onPress={() => updateField('unit', 'ml')}
+                    >
+                        <Text
+                            style={[
+                                styles.unitButtonText,
+                                formData.unit === 'ml' && styles.unitButtonTextActive,
+                            ]}
+                        >
+                            Mililitros (ml)
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.unitButton,
+                            formData.unit === 'mg' && styles.unitButtonActive,
+                        ]}
+                        onPress={() => updateField('unit', 'mg')}
+                    >
+                        <Text
+                            style={[
+                                styles.unitButtonText,
+                                formData.unit === 'mg' && styles.unitButtonTextActive,
+                            ]}
+                        >
+                            Miligramos (mg)
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             {/* Submit Button */}
             <TouchableOpacity
                 style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -225,6 +277,31 @@ const styles = StyleSheet.create({
     dateText: {
         fontSize: fontSize.md,
         color: colors.text,
+    },
+    unitContainer: {
+        flexDirection: 'row',
+        gap: spacing.md,
+    },
+    unitButton: {
+        flex: 1,
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.md,
+        padding: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: 'center',
+    },
+    unitButtonActive: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+    },
+    unitButtonText: {
+        fontSize: fontSize.md,
+        color: colors.text,
+        fontWeight: '600',
+    },
+    unitButtonTextActive: {
+        color: colors.surface,
     },
     submitButton: {
         backgroundColor: colors.primary,

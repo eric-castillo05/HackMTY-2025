@@ -26,9 +26,21 @@ export class StorageService {
     static async saveProduct(product) {
         try {
             const products = await this.getAllProducts();
-            products.push(product);
+            
+            // Formatear el producto según el esquema requerido
+            const formattedProduct = {
+                product_id: product.product_id || `PRD-${Date.now()}`,
+                product_name: product.product_name,
+                lotsName: product.lotsName,
+                expiry_date: product.expiry_date,
+                quantity: product.quantity,
+                status: product.status || 'VIGENTE',
+                mlg: product.mlg || 'ml', // 'ml' o 'mg'
+            };
+            
+            products.push(formattedProduct);
             await AsyncStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-            return product;
+            return formattedProduct;
         } catch (error) {
             console.error('Error saving product:', error);
             throw error;
@@ -41,12 +53,23 @@ export class StorageService {
     static async updateProduct(updatedProduct) {
         try {
             const products = await this.getAllProducts();
-            const index = products.findIndex(p => p.id === updatedProduct.id);
+            const index = products.findIndex(p => p.product_id === updatedProduct.product_id);
 
             if (index !== -1) {
-                products[index] = updatedProduct;
+                // Mantener el formato correcto
+                const formattedProduct = {
+                    product_id: updatedProduct.product_id,
+                    product_name: updatedProduct.product_name,
+                    lotsName: updatedProduct.lotsName,
+                    expiry_date: updatedProduct.expiry_date,
+                    quantity: updatedProduct.quantity,
+                    status: updatedProduct.status || 'VIGENTE',
+                    mlg: updatedProduct.mlg || 'ml',
+                };
+                
+                products[index] = formattedProduct;
                 await AsyncStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-                return updatedProduct;
+                return formattedProduct;
             }
             return null;
         } catch (error) {
@@ -61,7 +84,7 @@ export class StorageService {
     static async deleteProduct(productId) {
         try {
             const products = await this.getAllProducts();
-            const filtered = products.filter(p => p.id !== productId);
+            const filtered = products.filter(p => p.product_id !== productId);
             await AsyncStorage.setItem(PRODUCTS_KEY, JSON.stringify(filtered));
             return true;
         } catch (error) {
@@ -76,7 +99,7 @@ export class StorageService {
     static async getProductById(productId) {
         try {
             const products = await this.getAllProducts();
-            return products.find(p => p.id === productId) || null;
+            return products.find(p => p.product_id === productId) || null;
         } catch (error) {
             console.error('Error finding product:', error);
             return null;
@@ -96,6 +119,24 @@ export class StorageService {
     }
 
     /**
+     * Calculate days left until expiry
+     */
+    static calculateDaysLeft(expiryDate) {
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expiry = new Date(expiryDate);
+            expiry.setHours(0, 0, 0, 0);
+            const diffTime = expiry - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        } catch (error) {
+            console.error('Error calculating days left:', error);
+            return 0;
+        }
+    }
+
+    /**
      * Seed test data
      */
     static async seedTestData() {
@@ -107,34 +148,31 @@ export class StorageService {
 
         const testProducts = [
             {
-                id: 'PRD-001',
-                productName: 'Pechuga de Pollo Premium',
-                lotNumber: 'LOT-A-2024-10',
-                expiryDate: '2025-10-28',
-                quantity: 12,
-                createdAt: new Date().toISOString(),
+                product_id: 'PRD-001',
+                product_name: 'Pechuga de Pollo Premium',
+                lotsName: 'LOT-A-2024-10',
+                expiry_date: '2025-10-28T08:00:00',
+                quantity: '12',
                 status: 'VIGENTE',
-                days_left: 3,
+                mlg: 'mg',
             },
             {
-                id: 'PRD-002',
-                productName: 'Leche Entera 1L',
-                lotNumber: 'LOT-B-2024-10',
-                expiryDate: '2025-10-30',
-                quantity: 48,
-                createdAt: new Date().toISOString(),
+                product_id: 'PRD-002',
+                product_name: 'Leche Entera 1L',
+                lotsName: 'LOT-B-2024-10',
+                expiry_date: '2025-10-30T08:00:00',
+                quantity: '48',
                 status: 'VIGENTE',
-                days_left: 5,
+                mlg: 'ml',
             },
             {
-                id: 'PRD-003',
-                productName: 'Pan Baguette',
-                lotNumber: 'LOT-C-2024-10',
-                expiryDate: '2025-10-26',
-                quantity: 96,
-                createdAt: new Date().toISOString(),
+                product_id: 'PRD-003',
+                product_name: 'Pan Baguette',
+                lotsName: 'LOT-C-2024-10',
+                expiry_date: '2025-10-26T08:00:00',
+                quantity: '96',
                 status: 'VIGENTE',
-                days_left: 1,
+                mlg: 'mg',
             },
         ];
 

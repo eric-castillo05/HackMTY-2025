@@ -11,7 +11,6 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
 import { ProductService } from '../services/productService';
-import { StatCard } from '../components/StatCard';
 
 export const HomeScreen = ({ navigation }) => {
     const [stats, setStats] = useState({

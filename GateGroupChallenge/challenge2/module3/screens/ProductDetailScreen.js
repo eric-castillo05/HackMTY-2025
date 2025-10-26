@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
 import { StorageService } from '../services/storageService';
-import { formatDisplayDate } from '../../shared/utils/dateUtils';
 
 export const ProductDetailScreen = ({ navigation, route }) => {
     const { productId } = route.params;
@@ -21,6 +20,21 @@ export const ProductDetailScreen = ({ navigation, route }) => {
         console.log('ProductDetailScreen mounted with productId:', productId);
         loadProduct();
     }, [productId]);
+
+    const formatDisplayDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'N/A';
+        }
+    };
 
     const loadProduct = async () => {
         console.log('Loading product with ID:', productId);
@@ -33,7 +47,6 @@ export const ProductDetailScreen = ({ navigation, route }) => {
         }
 
         try {
-            // Usar getProductById directamente
             const foundProduct = await StorageService.getProductById(productId);
             console.log('Product found:', foundProduct);
             
@@ -44,18 +57,9 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 return;
             }
             
-            // Ensure the expiry date is in the correct format
-            if (foundProduct.expiryDate) {
-                foundProduct.expiryDate = foundProduct.expiryDate.split('T')[0];
-            }
-
-            // Recalcular días restantes
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const expiry = new Date(foundProduct.expiryDate);
-            expiry.setHours(0, 0, 0, 0);
-            foundProduct.days_left = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-            foundProduct.status = foundProduct.days_left >= 0 ? 'VIGENTE' : 'VENCIDO';
+            // Calculate days left
+            const daysLeft = StorageService.calculateDaysLeft(foundProduct.expiry_date);
+            foundProduct.days_left = daysLeft;
             
             setProduct(foundProduct);
         } catch (error) {
@@ -70,20 +74,35 @@ export const ProductDetailScreen = ({ navigation, route }) => {
     const handleDelete = () => {
         Alert.alert(
             'Eliminar Producto',
-            `¿Estás seguro de eliminar "${product.productName}"?`,
+            `¿Estás seguro de eliminar "${product.product_name}"?`,
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { 
+                    text: 'Cancelar', 
+                    style: 'cancel' 
+                },
                 {
                     text: 'Eliminar',
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await StorageService.deleteProduct(productId);
-                            Alert.alert('Eliminado', 'El producto ha sido eliminado');
-                            navigation.navigate('Home');
+                            console.log('Deleting product with ID:', productId);
+                            const result = await StorageService.deleteProduct(productId);
+                            console.log('Delete result:', result);
+                            
+                            if (result) {
+                                // Usar goBack() en lugar de navigate para volver a la pantalla anterior
+                                navigation.goBack();
+                                
+                                // Mostrar confirmación después de un pequeño delay
+                                setTimeout(() => {
+                                    Alert.alert('Éxito', 'El producto ha sido eliminado');
+                                }, 300);
+                            } else {
+                                Alert.alert('Error', 'No se pudo eliminar el producto');
+                            }
                         } catch (error) {
                             console.error('Error deleting product:', error);
-                            Alert.alert('Error', 'No se pudo eliminar el producto');
+                            Alert.alert('Error', 'No se pudo eliminar el producto. Intenta nuevamente.');
                         }
                     },
                 },
@@ -124,7 +143,7 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 {/* Header */}
                 <View style={styles.cardHeader}>
                     <View style={styles.headerText}>
-                        <Text style={styles.productName}>{product.productName}</Text>
+                        <Text style={styles.productName}>{product.product_name}</Text>
                     </View>
                 </View>
 
@@ -137,23 +156,30 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 <View style={styles.detailsSection}>
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>ID del Producto</Text>
-                        <Text style={[styles.detailValue, styles.monoText]}>{product.id}</Text>
+                        <Text style={[styles.detailValue, styles.monoText]}>{product.product_id}</Text>
                     </View>
 
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Número de Lote</Text>
-                        <Text style={[styles.detailValue, styles.monoText]}>{product.lotNumber}</Text>
+                        <Text style={[styles.detailValue, styles.monoText]}>{product.lotsName}</Text>
                     </View>
 
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Cantidad</Text>
-                        <Text style={styles.detailValue}>{product.quantity} unidades</Text>
+                        <Text style={styles.detailValue}>{product.quantity} {product.mlg}</Text>
+                    </View>
+
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Unidad</Text>
+                        <Text style={styles.detailValue}>
+                            {product.mlg === 'ml' ? 'Mililitros' : 'Miligramos'}
+                        </Text>
                     </View>
 
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Fecha de Expiración</Text>
                         <Text style={styles.detailValue}>
-                            {formatDisplayDate(product.expiryDate)}
+                            {formatDisplayDate(product.expiry_date)}
                         </Text>
                     </View>
 
@@ -168,13 +194,6 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                         <Text style={styles.detailLabel}>Estado</Text>
                         <Text style={[styles.detailValue, { color: statusColor }]}>
                             {product.status}
-                        </Text>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Fecha de Registro</Text>
-                        <Text style={styles.detailValue}>
-                            {formatDisplayDate(product.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0])}
                         </Text>
                     </View>
                 </View>

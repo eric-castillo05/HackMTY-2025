@@ -14,14 +14,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
 import { StorageService } from '../services/storageService';
 import { ProductService } from '../services/productService';
-import { getFreshnessStatus } from '../../shared/utils/dateUtils';
-import { formatDisplayDate } from '../../shared/utils/dateUtils';
 
 export const InventoryScreen = ({ navigation, route }) => {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedFilter, setSelectedFilter] = useState(route.params?.filter || 'all');
+    const [selectedFilter, setSelectedFilter] = useState(route?.params?.filter || 'all');
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -34,25 +32,43 @@ export const InventoryScreen = ({ navigation, route }) => {
     ];
 
     useFocusEffect(
-        useCallback(() => {
-            loadProducts();
-        }, [])
-    );
+    useCallback(() => {
+        loadProducts();
+    }, [route?.params?.refresh]) // Agrega esta dependencia
+);
 
     const loadProducts = async () => {
         try {
             const allProducts = await StorageService.getAllProducts();
-            // Add freshness status to each product
-            const productsWithStatus = allProducts.map(product => ({
-                ...product,
-                freshnessStatus: getFreshnessStatus(product.expiryDate),
-            }));
+            
+            // Add freshness status and days_left to each product
+            const productsWithStatus = allProducts.map(product => {
+                try {
+                    const daysLeft = StorageService.calculateDaysLeft(product.expiry_date);
+                    const freshnessStatus = ProductService.getFreshnessStatus(product.expiry_date);
+                    
+                    return {
+                        ...product,
+                        days_left: daysLeft,
+                        freshnessStatus: freshnessStatus,
+                    };
+                } catch (error) {
+                    console.error('Error processing product:', product, error);
+                    return {
+                        ...product,
+                        days_left: 0,
+                        freshnessStatus: 'expired',
+                    };
+                }
+            });
+            
             // Sort by expiry date (closest first)
             const sorted = ProductService.sortProductsByExpiry(productsWithStatus, true);
             setProducts(sorted);
             applyFilters(sorted, selectedFilter, searchQuery);
         } catch (error) {
             console.error('Error loading products:', error);
+            Alert.alert('Error', 'No se pudieron cargar los productos');
         } finally {
             setLoading(false);
         }
@@ -77,8 +93,8 @@ export const InventoryScreen = ({ navigation, route }) => {
             const lowerQuery = query.toLowerCase();
             filtered = filtered.filter(
                 p =>
-                    p.productName.toLowerCase().includes(lowerQuery) ||
-                    p.lotNumber.toLowerCase().includes(lowerQuery)
+                    (p.product_name && p.product_name.toLowerCase().includes(lowerQuery)) ||
+                    (p.lotsName && p.lotsName.toLowerCase().includes(lowerQuery))
             );
         }
 
@@ -96,8 +112,8 @@ export const InventoryScreen = ({ navigation, route }) => {
     };
 
     const handleProductPress = (product) => {
-        console.log('Navigating to ProductDetail with ID:', product.id);
-        navigation.navigate('ProductDetail', { productId: product.id });
+        console.log('Navigating to ProductDetail with ID:', product.product_id);
+        navigation.navigate('ProductDetail', { productId: product.product_id });
     };
 
     const getProductStatusColor = (daysLeft) => {
@@ -115,6 +131,21 @@ export const InventoryScreen = ({ navigation, route }) => {
         return 'VIGENTE';
     };
 
+    const formatDate = (dateString) => {
+        try {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-MX', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'N/A';
+        }
+    };
+
     const renderProduct = ({ item }) => {
         const statusColor = getProductStatusColor(item.days_left);
         const statusText = getProductStatusText(item.days_left);
@@ -127,9 +158,9 @@ export const InventoryScreen = ({ navigation, route }) => {
                 <View style={styles.productHeader}>
                     <View style={styles.productInfo}>
                         <Text style={styles.productName} numberOfLines={1}>
-                            {item.productName}
+                            {item.product_name || 'Sin nombre'}
                         </Text>
-                        <Text style={styles.productLot}>Lote: {item.lotNumber}</Text>
+                        <Text style={styles.productLot}>Lote: {item.lotsName || 'N/A'}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
                         <Text style={styles.statusBadgeText}>{statusText}</Text>
@@ -139,16 +170,12 @@ export const InventoryScreen = ({ navigation, route }) => {
                 <View style={styles.productFooter}>
                     <View style={styles.productDetailItem}>
                         <Text style={styles.productDetailLabel}>Cantidad</Text>
-                        <Text style={styles.productDetailValue}>{item.quantity}</Text>
+                        <Text style={styles.productDetailValue}>{item.quantity || '0'} {item.mlg || 'ml'}</Text>
                     </View>
                     <View style={styles.productDetailItem}>
                         <Text style={styles.productDetailLabel}>Vence</Text>
                         <Text style={styles.productDetailValue}>
-                            {new Date(item.expiryDate).toLocaleDateString('es-MX', { 
-                                day: '2-digit', 
-                                month: '2-digit', 
-                                year: 'numeric' 
-                            })}
+                            {formatDate(item.expiry_date)}
                         </Text>
                     </View>
                     <View style={styles.productDetailItem}>
@@ -250,7 +277,7 @@ export const InventoryScreen = ({ navigation, route }) => {
             <FlatList
                 data={filteredProducts}
                 renderItem={renderProduct}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.product_id}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={renderEmptyState}
                 refreshControl={
