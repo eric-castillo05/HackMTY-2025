@@ -100,7 +100,7 @@ export const MetricsTable = ({ metrics = {} }) => {
 };
 
 /**
- * Componente de tabla para predicciones de productos
+ * Componente de tabla para predicciones de Vuelos
  */
 export const PredictionsTable = ({ predictions = [] }) => {
   const columns = [
@@ -110,8 +110,8 @@ export const PredictionsTable = ({ predictions = [] }) => {
       width: 100,
     },
     {
-      key: 'productName',
-      label: 'Producto',
+      key: 'NVuelo',
+      label: 'Vuelo',
       width: 180,
     },
     {
