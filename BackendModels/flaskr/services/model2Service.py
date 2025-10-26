@@ -1,8 +1,15 @@
 from datetime import timedelta
+from pathlib import Path
 from typing import List
 
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 pipe: Pipeline = None
 SHEET_NAME = None  # None = primera hoja
@@ -242,7 +249,7 @@ class model2Service:
                                                                                              "quarter"]) if
                                       c in df_model_local.columns]].copy()
 
-        forecast = forecast_recursive_all_features(
+        forecast = self.forecast_recursive_all_features(
             original_df=original_df,
             model=pl,
             key_col=COL_PRODUCT,
