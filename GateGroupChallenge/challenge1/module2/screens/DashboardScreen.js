@@ -2,41 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 
 // Network configuration:
-// - iOS Simulator: use 'http://localhost:5002'
-// - Android Emulator: use 'http://10.0.2.2:5002'
-// - Physical device with tunnel: use ngrok or Expo tunnel
-// - Physical device on same network: use your machine's local IP
-// Current setup: Change this to match your environment
-// TODO: Replace with your ngrok URL (e.g., 'https://abc123.ngrok.io')
-const API_BASE_URL = 'https://{{your-ngrok-url}}.ngrok.io';
+// - iOS Simulator: use 'http://localhost:5001'
+// - Android Emulator: use 'http://10.0.2.2:5001'
+// - Ubuntu server: use 'http://YOUR_SERVER_IP:5001'
+// Current setup: Replace with your Ubuntu server IP
+const API_BASE_URL = 'http://{{YOUR_SERVER_IP}}:5001';
 
 export const DashboardScreen = ({ navigation }) => {
-  const [forecasts, setForecasts] = useState([]);
+  const [predictions, setPredictions] = useState([]);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [groupBy, setGroupBy] = useState('flight'); // 'flight', 'product', 'date'
-  const [horizon, setHorizon] = useState('14');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    loadForecasts();
+    loadPredictions();
   }, []);
 
-  const loadForecasts = async () => {
+  const loadPredictions = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const filePath = '/Users/diegogax10/Documents/Workspace/HackMTY-2025/predict.xlsx';
-      
       // Create abort controller for timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       
       try {
         const response = await fetch(
-          `${API_BASE_URL}/forecast_predict_group?path_file=${encodeURIComponent(filePath)}&horizon=${horizon}`,
+          `${API_BASE_URL}/api/predictions`,
           {
             signal: controller.signal,
             headers: {
@@ -52,16 +47,17 @@ export const DashboardScreen = ({ navigation }) => {
         }
         
         const data = await response.json();
-        setForecasts(data.data || []);
+        setPredictions(data.predictions || []);
+        setAlerts(data.alerts || []);
       } catch (fetchError) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
-          throw new Error('Timeout: El servidor no respondió a tiempo. Verifica que el servidor esté corriendo y sea accesible desde ' + API_BASE_URL);
+          throw new Error('Timeout: El servidor no respondió a tiempo. Verifica que el servidor esté corriendo en puerto 5001 y sea accesible desde ' + API_BASE_URL);
         }
         throw fetchError;
       }
     } catch (error) {
-      console.error('Error loading forecasts:', error);
+      console.error('Error loading predictions:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -70,79 +66,37 @@ export const DashboardScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadForecasts();
+    await loadPredictions();
     setRefreshing(false);
   };
 
-  const getGroupedForecasts = () => {
-    let filtered = forecasts;
+  const getFilteredPredictions = () => {
+    if (!searchTerm) return predictions;
     
-    if (searchTerm) {
-      filtered = forecasts.filter(f => 
-        f.Flight_ID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.Product_ID?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (groupBy === 'flight') {
-      const grouped = {};
-      filtered.forEach(f => {
-        const key = f.Flight_ID;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(f);
-      });
-      return Object.entries(grouped).map(([key, items]) => ({
-        title: `Vuelo ${key}`,
-        data: items,
-        key,
-      }));
-    } else if (groupBy === 'product') {
-      const grouped = {};
-      filtered.forEach(f => {
-        const key = f.Product_ID;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(f);
-      });
-      return Object.entries(grouped).map(([key, items]) => ({
-        title: `Producto ${key}`,
-        data: items,
-        key,
-      }));
-    } else {
-      const grouped = {};
-      filtered.forEach(f => {
-        const date = f.Date?.split('T')[0];
-        if (!grouped[date]) grouped[date] = [];
-        grouped[date].push(f);
-      });
-      return Object.entries(grouped).map(([key, items]) => ({
-        title: key,
-        data: items,
-        key,
-      }));
-    }
+    return predictions.filter(p => 
+      p.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.id?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   };
 
   const getStatistics = () => {
-    if (forecasts.length === 0) return null;
+    if (predictions.length === 0) return null;
     
-    const totalPredicted = forecasts.reduce((sum, f) => sum + (f.Quantity_Consumed_pred || 0), 0);
-    const avgPredicted = totalPredicted / forecasts.length;
-    const uniqueFlights = new Set(forecasts.map(f => f.Flight_ID)).size;
-    const uniqueProducts = new Set(forecasts.map(f => f.Product_ID)).size;
-    const uniqueDates = new Set(forecasts.map(f => f.Date?.split('T')[0])).size;
+    const totalPredicted = predictions.reduce((sum, p) => sum + (p.totalPredicted || 0), 0);
+    const avgScore = predictions.reduce((sum, p) => sum + (p.predictabilityScore || 0), 0) / predictions.length;
+    const highVariability = predictions.filter(p => p.variability > 30).length;
 
     return {
-      total: forecasts.length,
+      total: predictions.length,
       totalPredicted: Math.round(totalPredicted),
-      avgPredicted: Math.round(avgPredicted),
-      uniqueFlights,
-      uniqueProducts,
-      uniqueDates,
+      avgScore: Math.round(avgScore),
+      highVariability,
+      alertCount: alerts.length,
     };
   };
 
-  const groupedForecasts = getGroupedForecasts();
+  const filteredPredictions = getFilteredPredictions();
   const stats = getStatistics();
 
   return (
@@ -161,19 +115,19 @@ export const DashboardScreen = ({ navigation }) => {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.total}</Text>
-              <Text style={styles.statLabel}>Predicciones</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, {color: '#2196F3'}]}>{stats.uniqueFlights}</Text>
-              <Text style={styles.statLabel}>Vuelos</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, {color: '#4CAF50'}]}>{stats.uniqueProducts}</Text>
               <Text style={styles.statLabel}>Productos</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, {color: '#2196F3'}]}>{stats.avgScore}</Text>
+              <Text style={styles.statLabel}>Score Prom.</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, {color: '#FF9800'}]}>{stats.totalPredicted}</Text>
               <Text style={styles.statLabel}>Total Pred.</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, {color: stats.alertCount > 0 ? '#FF5722' : '#4CAF50'}]}>{stats.alertCount}</Text>
+              <Text style={styles.statLabel}>Alertas</Text>
             </View>
           </View>
         )}
@@ -189,97 +143,95 @@ export const DashboardScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Alerts Banner */}
+      {alerts.length > 0 && !error && (
+        <View style={styles.alertsSection}>
+          {alerts.slice(0, 3).map((alert, idx) => (
+            <View key={idx} style={[styles.alertBanner, 
+              alert.severity === 'warning' ? styles.alertWarning : styles.alertInfo
+            ]}>
+              <Text style={styles.alertTitle}>{alert.title}</Text>
+              <Text style={styles.alertMessage}>{alert.message}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Error Banner */}
       {error && (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>⚠️ {error}</Text>
-          <Text style={styles.errorHint}>Servidor Flask debe estar en puerto 5002</Text>
-          <Text style={styles.errorHint}>• iOS Simulator: usa localhost:5002</Text>
+          <Text style={styles.errorHint}>Servidor Flask debe estar en puerto 5001 (app.py)</Text>
+          <Text style={styles.errorHint}>• iOS Simulator: usa localhost:5001</Text>
           <Text style={styles.errorHint}>• Expo tunnel: usa ngrok o cambia a --lan mode</Text>
-          <Text style={styles.errorHint}>• Physical device: usa IP local (10.22.65.20:5002)</Text>
+          <Text style={styles.errorHint}>• Physical device: usa IP local (10.22.65.20:5001)</Text>
         </View>
       )}
 
-      {/* Grouping Options */}
-      <View style={styles.groupingSection}>
-        <Text style={styles.groupingTitle}>Agrupar por:</Text>
-        <View style={styles.groupingButtons}>
-          <TouchableOpacity 
-            style={[styles.groupBtn, groupBy === 'flight' && styles.groupBtnActive]}
-            onPress={() => setGroupBy('flight')}
-          >
-            <Text style={[styles.groupBtnText, groupBy === 'flight' && styles.groupBtnTextActive]}>✈️ Vuelo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.groupBtn, groupBy === 'product' && styles.groupBtnActive]}
-            onPress={() => setGroupBy('product')}
-          >
-            <Text style={[styles.groupBtnText, groupBy === 'product' && styles.groupBtnTextActive]}>📦 Producto</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.groupBtn, groupBy === 'date' && styles.groupBtnActive]}
-            onPress={() => setGroupBy('date')}
-          >
-            <Text style={[styles.groupBtnText, groupBy === 'date' && styles.groupBtnTextActive]}>📅 Fecha</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Forecasts */}
+      {/* Predictions */}
       <View style={styles.forecastsSection}>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#2196F3" />
             <Text style={styles.loadingText}>Cargando predicciones...</Text>
           </View>
-        ) : forecasts.length === 0 ? (
+        ) : predictions.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>📊 No hay predicciones disponibles</Text>
             <Text style={styles.emptyHint}>Presiona para recargar</Text>
-            <TouchableOpacity style={styles.reloadBtn} onPress={loadForecasts}>
+            <TouchableOpacity style={styles.reloadBtn} onPress={loadPredictions}>
               <Text style={styles.reloadBtnText}>🔄 Recargar</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          groupedForecasts.map((group) => (
-            <View key={group.key} style={styles.forecastGroup}>
-              <View style={styles.groupHeader}>
-                <Text style={styles.groupTitle}>{group.title}</Text>
-                <Text style={styles.groupCount}>{group.data.length} items</Text>
-              </View>
-              {group.data.slice(0, 5).map((forecast, idx) => (
-                <View key={idx} style={styles.forecastCard}>
-                  <View style={styles.forecastRow}>
-                    <View style={styles.forecastInfo}>
-                      <Text style={styles.forecastFlight}>✈️ {forecast.Flight_ID}</Text>
-                      <Text style={styles.forecastProduct}>📦 {forecast.Product_ID}</Text>
-                      <Text style={styles.forecastDate}>📅 {forecast.Date?.split('T')[0]}</Text>
-                    </View>
-                    <View style={styles.forecastPrediction}>
-                      <Text style={styles.predictionValue}>{forecast.Quantity_Consumed_pred}</Text>
-                      <Text style={styles.predictionLabel}>Consumo pred.</Text>
-                    </View>
-                  </View>
-                  <View style={styles.forecastDetails}>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Especificación</Text>
-                      <Text style={styles.detailValue}>{forecast.Standard_Specification_Qty}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Retornado</Text>
-                      <Text style={styles.detailValue}>{forecast.Quantity_Returned}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Día semana</Text>
-                      <Text style={styles.detailValue}>{['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][forecast.dow]}</Text>
-                    </View>
-                  </View>
+          filteredPredictions.map((prediction) => (
+            <TouchableOpacity 
+              key={prediction.id} 
+              style={styles.predictionCard}
+              onPress={() => navigation.navigate('PredictionDetails', { prediction })}
+            >
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.productName}>{prediction.productName}</Text>
+                  <Text style={styles.productSku}>SKU: {prediction.sku}</Text>
                 </View>
-              ))}
-              {group.data.length > 5 && (
-                <Text style={styles.moreItems}>+ {group.data.length - 5} más...</Text>
+                <View style={styles.scoreContainer}>
+                  <Text style={[styles.scoreValue, {
+                    color: prediction.predictabilityScore >= 70 ? '#4CAF50' : 
+                           prediction.predictabilityScore >= 50 ? '#FF9800' : '#FF5722'
+                  }]}>{prediction.predictabilityScore}</Text>
+                  <Text style={styles.scoreLabel}>Score</Text>
+                </View>
+              </View>
+              
+              <View style={styles.predictionStats}>
+                <View style={styles.statBox}>
+                  <Text style={styles.statBoxValue}>{prediction.totalPredicted}</Text>
+                  <Text style={styles.statBoxLabel}>Total Pred.</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={styles.statBoxValue}>{prediction.avgDailyConsumption}</Text>
+                  <Text style={styles.statBoxLabel}>Prom. Diario</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={[styles.statBoxValue, {
+                    color: prediction.trend === 'Incrementando' ? '#4CAF50' : '#FF9800'
+                  }]}>{prediction.trendPercentage > 0 ? '+' : ''}{prediction.trendPercentage}%</Text>
+                  <Text style={styles.statBoxLabel}>{prediction.trend}</Text>
+                </View>
+              </View>
+
+              <View style={styles.dateRange}>
+                <Text style={styles.dateText}>📅 {prediction.startDate} → {prediction.endDate}</Text>
+              </View>
+
+              {prediction.recommendations && prediction.recommendations.length > 0 && (
+                <View style={styles.recommendations}>
+                  <Text style={styles.recommendationText}>💡 {prediction.recommendations[0]}</Text>
+                </View>
               )}
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </View>
@@ -358,42 +310,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
-  groupingSection: {
+  alertsSection: {
     padding: 16,
-    backgroundColor: '#fff',
+    paddingTop: 0,
+  },
+  alertBanner: {
+    padding: 12,
     marginBottom: 8,
+    borderRadius: 8,
+    borderLeftWidth: 4,
   },
-  groupingTitle: {
+  alertWarning: {
+    backgroundColor: '#FFF3CD',
+    borderLeftColor: '#FFA726',
+  },
+  alertInfo: {
+    backgroundColor: '#E3F2FD',
+    borderLeftColor: '#2196F3',
+  },
+  alertTitle: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  alertMessage: {
+    fontSize: 13,
     color: '#666',
-    marginBottom: 12,
-  },
-  groupingButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  groupBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  groupBtnActive: {
-    backgroundColor: '#2196F3',
-    borderColor: '#2196F3',
-  },
-  groupBtnText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  groupBtnTextActive: {
-    color: '#fff',
-    fontWeight: '600',
   },
   forecastsSection: {
     padding: 16,
@@ -436,7 +379,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  forecastGroup: {
+  predictionCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
@@ -447,100 +390,83 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  groupHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: '#2196F3',
   },
-  groupTitle: {
+  productName: {
     fontSize: 18,
     fontWeight: '700',
     color: '#333',
-  },
-  groupCount: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  forecastCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  forecastRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  forecastInfo: {
-    flex: 1,
-  },
-  forecastFlight: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
-  forecastProduct: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  forecastDate: {
+  productSku: {
     fontSize: 13,
     color: '#999',
   },
-  forecastPrediction: {
+  scoreContainer: {
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  predictionValue: {
+  scoreValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
   },
-  predictionLabel: {
+  scoreLabel: {
     fontSize: 11,
     color: '#666',
     marginTop: 2,
   },
-  forecastDetails: {
+  predictionStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    marginBottom: 12,
   },
-  detailItem: {
+  statBox: {
     flex: 1,
     alignItems: 'center',
+    padding: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginHorizontal: 4,
   },
-  detailLabel: {
-    fontSize: 11,
-    color: '#999',
+  statBoxValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 4,
   },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  moreItems: {
+  statBoxLabel: {
+    fontSize: 11,
+    color: '#666',
     textAlign: 'center',
-    color: '#2196F3',
-    fontSize: 14,
+  },
+  dateRange: {
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    marginBottom: 8,
+  },
+  dateText: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+  },
+  recommendations: {
+    backgroundColor: '#E8F5E9',
+    padding: 10,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+  },
+  recommendationText: {
+    fontSize: 13,
+    color: '#2E7D32',
     fontWeight: '500',
-    marginTop: 8,
   },
 });
