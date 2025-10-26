@@ -41,32 +41,14 @@ export const ScannerScreen = ({ navigation }) => {
         Vibration.vibrate(100);
 
         try {
-            console.log('📱 Scanner: QR escaneado:', data);
-            
             // Record the scan and get count
             const scanRecord = await QRCounterService.recordScan(data);
-            console.log('📱 Scanner: scanRecord recibido:', JSON.stringify(scanRecord, null, 2));
-            
             setLastScan(scanRecord);
-
-            // El backendData ya viene en scanRecord desde qrCounterService
-            console.log('📱 Scanner: backendData:', scanRecord.backendData);
             setBackendVerification(scanRecord.backendData);
-
-            if (scanRecord.backendData) {
-                console.log('📱 Scanner:  Verificación backend exitosa:', scanRecord.backendData);
-            } else {
-                console.log('📱 Scanner:  No hay backendData');
-            }
 
             // Save product to inventory if valid
             if (scanRecord.isValid && scanRecord.backendData) {
-                try {
-                    await ProductService.saveProductFromQR(scanRecord.backendData);
-                    console.log('Product saved to inventory');
-                } catch (productError) {
-                    console.error('Error saving product:', productError);
-                }
+                await ProductService.saveProductFromQR(scanRecord.backendData);
             }
 
             // Auto-reset after 4 seconds to allow continuous scanning
@@ -75,7 +57,6 @@ export const ScannerScreen = ({ navigation }) => {
                 setBackendVerification(null);
             }, 4000);
         } catch (error) {
-            console.error('Error processing QR:', error);
             setScanned(false);
         }
     };

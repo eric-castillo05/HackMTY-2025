@@ -1,5 +1,6 @@
 // challenge1/module1/services/storageService.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ErrorHandler } from '../../../shared/services/errorHandler';
 
 const PRODUCTS_KEY = '@gategroup_products';
 
@@ -15,7 +16,7 @@ export class StorageService {
             const data = await AsyncStorage.getItem(PRODUCTS_KEY);
             return data ? JSON.parse(data) : [];
         } catch (error) {
-            console.error('Error reading products:', error);
+            ErrorHandler.logError('StorageService.getAllProducts', error);
             return [];
         }
     }
@@ -30,10 +31,12 @@ export class StorageService {
             // Formatear el producto según el esquema requerido
             const formattedProduct = {
                 product_id: product.product_id || `PRD-${Date.now()}`,
+                uuidProduct: product.uuidProduct || '',
                 product_name: product.product_name,
                 lotsName: product.lotsName,
                 expiry_date: product.expiry_date,
                 quantity: product.quantity,
+                urlImage: product.urlImage || '',
                 status: product.status || 'VIGENTE',
                 mlg: product.mlg || 'ml', // 'ml' o 'mg'
             };
@@ -42,8 +45,8 @@ export class StorageService {
             await AsyncStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
             return formattedProduct;
         } catch (error) {
-            console.error('Error saving product:', error);
-            throw error;
+            ErrorHandler.logError('StorageService.saveProduct', error);
+            return null;
         }
     }
 
@@ -59,10 +62,12 @@ export class StorageService {
                 // Mantener el formato correcto
                 const formattedProduct = {
                     product_id: updatedProduct.product_id,
+                    uuidProduct: updatedProduct.uuidProduct || '',
                     product_name: updatedProduct.product_name,
                     lotsName: updatedProduct.lotsName,
                     expiry_date: updatedProduct.expiry_date,
                     quantity: updatedProduct.quantity,
+                    urlImage: updatedProduct.urlImage || '',
                     status: updatedProduct.status || 'VIGENTE',
                     mlg: updatedProduct.mlg || 'ml',
                 };
@@ -73,8 +78,8 @@ export class StorageService {
             }
             return null;
         } catch (error) {
-            console.error('Error updating product:', error);
-            throw error;
+            ErrorHandler.logError('StorageService.updateProduct', error);
+            return null;
         }
     }
 
@@ -88,8 +93,8 @@ export class StorageService {
             await AsyncStorage.setItem(PRODUCTS_KEY, JSON.stringify(filtered));
             return true;
         } catch (error) {
-            console.error('Error deleting product:', error);
-            throw error;
+            ErrorHandler.logError('StorageService.deleteProduct', error);
+            return false;
         }
     }
 
@@ -101,7 +106,7 @@ export class StorageService {
             const products = await this.getAllProducts();
             return products.find(p => p.product_id === productId) || null;
         } catch (error) {
-            console.error('Error finding product:', error);
+            ErrorHandler.logError('StorageService.getProductById', error);
             return null;
         }
     }
@@ -113,8 +118,7 @@ export class StorageService {
         try {
             await AsyncStorage.removeItem(PRODUCTS_KEY);
         } catch (error) {
-            console.error('Error clearing products:', error);
-            throw error;
+            ErrorHandler.logError('StorageService.clearAllProducts', error);
         }
     }
 
@@ -131,7 +135,7 @@ export class StorageService {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             return diffDays;
         } catch (error) {
-            console.error('Error calculating days left:', error);
+            ErrorHandler.logError('StorageService.calculateDaysLeft', error);
             return 0;
         }
     }
@@ -142,7 +146,6 @@ export class StorageService {
     static async seedTestData() {
         const existing = await this.getAllProducts();
         if (existing.length > 0) {
-            console.log('Test data already exists, skipping seed');
             return;
         }
 
@@ -179,7 +182,5 @@ export class StorageService {
         for (const product of testProducts) {
             await this.saveProduct(product);
         }
-
-        console.log('Test data seeded successfully');
     }
 }

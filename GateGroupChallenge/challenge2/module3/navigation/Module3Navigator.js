@@ -135,6 +135,7 @@ export const Module3Navigator = () => {
                 options={{
                     title: 'Registrar Lote',
                     presentation: 'modal',
+                    headerLeft: () => null,
                 }}
             />
             <Stack.Screen

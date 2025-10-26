@@ -7,9 +7,12 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    SafeAreaView,
+    Platform,
 } from 'react-native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
 import { StorageService } from '../services/storageService';
+import { ApiService } from '../services/apiService';
 
 export const ProductDetailScreen = ({ navigation, route }) => {
     const { productId } = route.params;
@@ -31,28 +34,22 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 year: 'numeric'
             });
         } catch (error) {
-            console.error('Error formatting date:', error);
             return 'N/A';
         }
     };
 
     const loadProduct = async () => {
-        console.log('Loading product with ID:', productId);
-
         if (!productId) {
-            console.error('No product ID provided in route params');
-            Alert.alert('Error', 'ID de producto no válido');
+            Alert.alert('Error', 'ID de producto no válido.');
             navigation.goBack();
             return;
         }
 
         try {
             const foundProduct = await StorageService.getProductById(productId);
-            console.log('Product found:', foundProduct);
             
             if (!foundProduct) {
-                console.error('Product not found with ID:', productId);
-                Alert.alert('Error', 'Producto no encontrado');
+                Alert.alert('Error', 'Producto no encontrado.');
                 navigation.goBack();
                 return;
             }
@@ -63,49 +60,55 @@ export const ProductDetailScreen = ({ navigation, route }) => {
             
             setProduct(foundProduct);
         } catch (error) {
-            console.error('Error loading product:', error);
-            Alert.alert('Error', 'No se pudo cargar el producto');
+            Alert.alert('Error', 'No se pudo cargar el producto.');
             navigation.goBack();
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         Alert.alert(
-            'Eliminar Producto',
-            `¿Estás seguro de eliminar "${product.product_name}"?`,
+            'Confirmar Eliminación',
+            '¿Estás seguro de que deseas eliminar este producto?',
             [
-                { 
-                    text: 'Cancelar', 
-                    style: 'cancel' 
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
                 },
                 {
                     text: 'Eliminar',
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            console.log('Deleting product with ID:', productId);
-                            const result = await StorageService.deleteProduct(productId);
-                            console.log('Delete result:', result);
+                            // Intentar eliminar del API primero usando uuidProduct
+                            const apiResponse = await ApiService.deleteProduct(product.uuidProduct);
                             
-                            if (result) {
-                                // Usar goBack() en lugar de navigate para volver a la pantalla anterior
+                            // Eliminar del almacenamiento local usando product_id
+                            const localResult = await StorageService.deleteProduct(productId);
+                            
+                            if (apiResponse.success && localResult) {
+                                Alert.alert('Éxito', 'Producto eliminado correctamente de la base de datos.');
                                 navigation.goBack();
-                                
-                                // Mostrar confirmación después de un pequeño delay
-                                setTimeout(() => {
-                                    Alert.alert('Éxito', 'El producto ha sido eliminado');
-                                }, 300);
+                            } else if (localResult) {
+                                Alert.alert(
+                                    'Eliminado Localmente',
+                                    `El producto se eliminó localmente, pero hubo un problema con el servidor.\n\nError: ${apiResponse.error || 'Desconocido'}`,
+                                    [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => navigation.goBack()
+                                        }
+                                    ]
+                                );
                             } else {
-                                Alert.alert('Error', 'No se pudo eliminar el producto');
+                                Alert.alert('Error', 'No se pudo eliminar el producto.');
                             }
                         } catch (error) {
-                            console.error('Error deleting product:', error);
-                            Alert.alert('Error', 'No se pudo eliminar el producto. Intenta nuevamente.');
+                            Alert.alert('Error', 'Ocurrió un error al intentar eliminar el producto.');
                         }
-                    },
-                },
+                    }
+                }
             ]
         );
     };
@@ -137,6 +140,7 @@ export const ProductDetailScreen = ({ navigation, route }) => {
     const statusText = getStatusText(product.days_left);
 
     return (
+        <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             {/* Product Info Card */}
             <View style={styles.infoCard}>
@@ -209,16 +213,22 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 </Text>
             </TouchableOpacity>
         </ScrollView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
     },
     content: {
         padding: spacing.lg,
+        paddingTop: Platform.OS === 'ios' ? spacing.md : spacing.lg,
     },
     loadingContainer: {
         flex: 1,

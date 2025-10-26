@@ -1,6 +1,7 @@
 // challenge1/shared/services/productService.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Product, createProductFromQR } from '../models/ProductModel';
+import { ErrorHandler } from '../../../shared/services/errorHandler';
 
 const PRODUCTS_KEY = '@airplane_products';
 
@@ -17,7 +18,7 @@ export class ProductService {
             const products = data ? JSON.parse(data) : [];
             return products.map(p => new Product(p));
         } catch (error) {
-            console.error('Error reading products:', error);
+            ErrorHandler.logError('ProductService.getAllProducts', error);
             return [];
         }
     }
@@ -50,8 +51,8 @@ export class ProductService {
             
             return product;
         } catch (error) {
-            console.error('Error saving product:', error);
-            throw error;
+            ErrorHandler.logError('ProductService.saveProductFromQR', error);
+            return null;
         }
     }
 
@@ -65,7 +66,7 @@ export class ProductService {
                 p => p.id === identifier || p.batchNumber === identifier
             ) || null;
         } catch (error) {
-            console.error('Error getting product:', error);
+            ErrorHandler.logError('ProductService.getProduct', error);
             return null;
         }
     }
@@ -90,8 +91,8 @@ export class ProductService {
             
             return product;
         } catch (error) {
-            console.error('Error updating quantity:', error);
-            throw error;
+            ErrorHandler.logError('ProductService.updateQuantity', error);
+            return null;
         }
     }
 
@@ -108,8 +109,7 @@ export class ProductService {
                 JSON.stringify(filtered.map(p => p.toJSON()))
             );
         } catch (error) {
-            console.error('Error deleting product:', error);
-            throw error;
+            ErrorHandler.logError('ProductService.deleteProduct', error);
         }
     }
 
@@ -138,7 +138,7 @@ export class ProductService {
             
             return grouped;
         } catch (error) {
-            console.error('Error grouping by expiration:', error);
+            ErrorHandler.logError('ProductService.getProductsByExpiration', error);
             return { expired: [], expiringSoon: [], fresh: [] };
         }
     }
@@ -161,7 +161,7 @@ export class ProductService {
             
             return grouped;
         } catch (error) {
-            console.error('Error grouping by category:', error);
+            ErrorHandler.logError('ProductService.getProductsByCategory', error);
             return {};
         }
     }
@@ -184,7 +184,7 @@ export class ProductService {
             
             return grouped;
         } catch (error) {
-            console.error('Error grouping by location:', error);
+            ErrorHandler.logError('ProductService.getProductsByLocation', error);
             return {};
         }
     }
@@ -197,7 +197,7 @@ export class ProductService {
             const products = await this.getAllProducts();
             return products.filter(p => p.flightNumber === flightNumber);
         } catch (error) {
-            console.error('Error getting products by flight:', error);
+            ErrorHandler.logError('ProductService.getProductsByFlight', error);
             return [];
         }
     }
@@ -223,7 +223,7 @@ export class ProductService {
                     : 0,
             };
         } catch (error) {
-            console.error('Error calculating statistics:', error);
+            ErrorHandler.logError('ProductService.getStatistics', error);
             return {
                 totalProducts: 0,
                 totalQuantity: 0,
@@ -242,8 +242,7 @@ export class ProductService {
         try {
             await AsyncStorage.removeItem(PRODUCTS_KEY);
         } catch (error) {
-            console.error('Error clearing products:', error);
-            throw error;
+            ErrorHandler.logError('ProductService.clearAll', error);
         }
     }
 }

@@ -1,6 +1,7 @@
 // challenge1/module1/services/qrCounterService.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BackendService } from './backendService';
+import { ErrorHandler } from '../../../shared/services/errorHandler';
 
 const QR_SCANS_KEY = '@qr_scans';
 
@@ -16,7 +17,7 @@ export class QRCounterService {
             const data = await AsyncStorage.getItem(QR_SCANS_KEY);
             return data ? JSON.parse(data) : [];
         } catch (error) {
-            console.error('Error reading QR scans:', error);
+            ErrorHandler.logError('QRCounterService.getAllScans', error);
             return [];
         }
     }
@@ -28,10 +29,8 @@ export class QRCounterService {
      */
     static async recordScan(qrCode) {
         try {
-            console.log('🔵 QRCounter: Verificando con backend...');
             // Verify QR code with Backend
             const backendData = await BackendService.verificarProducto(qrCode);
-            console.log('🔵 QRCounter: backendData recibido:', backendData);
             
             const scans = await this.getAllScans();
             
@@ -65,8 +64,8 @@ export class QRCounterService {
             // Return the updated record
             return scans[existingIndex !== -1 ? existingIndex : scans.length - 1];
         } catch (error) {
-            console.error('Error recording scan:', error);
-            throw error;
+            ErrorHandler.logError('QRCounterService.recordScan', error);
+            return { qrCode, isValid: false, count: 0, backendData: null, lastScanned: new Date().toISOString() };
         }
     }
 
@@ -79,7 +78,7 @@ export class QRCounterService {
             const scan = scans.find(s => s.qrCode === qrCode);
             return scan ? scan.count : 0;
         } catch (error) {
-            console.error('Error getting scan count:', error);
+            ErrorHandler.logError('QRCounterService.getScanCount', error);
             return 0;
         }
     }
@@ -91,8 +90,7 @@ export class QRCounterService {
         try {
             await AsyncStorage.removeItem(QR_SCANS_KEY);
         } catch (error) {
-            console.error('Error clearing scans:', error);
-            throw error;
+            ErrorHandler.logError('QRCounterService.clearAllScans', error);
         }
     }
 
@@ -105,8 +103,7 @@ export class QRCounterService {
             const filtered = scans.filter(s => s.qrCode !== qrCode);
             await AsyncStorage.setItem(QR_SCANS_KEY, JSON.stringify(filtered));
         } catch (error) {
-            console.error('Error deleting scan:', error);
-            throw error;
+            ErrorHandler.logError('QRCounterService.deleteScan', error);
         }
     }
 }

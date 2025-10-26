@@ -7,7 +7,6 @@ import {
     FlatList,
     TouchableOpacity,
     RefreshControl,
-    Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
@@ -32,7 +31,7 @@ export const HistoryScreen = () => {
             );
             setScans(sorted);
         } catch (error) {
-            console.error('Error loading scans:', error);
+            // Error manejado silenciosamente
         }
     };
 
@@ -42,48 +41,14 @@ export const HistoryScreen = () => {
         setRefreshing(false);
     };
 
-    const handleDeleteScan = (qrCode) => {
-        Alert.alert(
-            'Eliminar Registro',
-            '¿Estás seguro de que deseas eliminar este registro de escaneo?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Eliminar',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await QRCounterService.deleteScan(qrCode);
-                            await loadScans();
-                        } catch (error) {
-                            console.error('Error deleting scan:', error);
-                        }
-                    },
-                },
-            ]
-        );
+    const handleDeleteScan = async (qrCode) => {
+        await QRCounterService.deleteScan(qrCode);
+        await loadScans();
     };
 
-    const handleClearAll = () => {
-        Alert.alert(
-            'Limpiar Todo',
-            '¿Estás seguro de que deseas eliminar todo el historial?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Limpiar Todo',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await QRCounterService.clearAllScans();
-                            await loadScans();
-                        } catch (error) {
-                            console.error('Error clearing scans:', error);
-                        }
-                    },
-                },
-            ]
-        );
+    const handleClearAll = async () => {
+        await QRCounterService.clearAllScans();
+        await loadScans();
     };
 
     const formatDate = (isoString) => {

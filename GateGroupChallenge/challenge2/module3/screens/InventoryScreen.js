@@ -8,7 +8,8 @@ import {
     TextInput,
     TouchableOpacity,
     RefreshControl,
-    Alert,
+    SafeAreaView,
+    Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
@@ -53,7 +54,6 @@ export const InventoryScreen = ({ navigation, route }) => {
                         freshnessStatus: freshnessStatus,
                     };
                 } catch (error) {
-                    console.error('Error processing product:', product, error);
                     return {
                         ...product,
                         days_left: 0,
@@ -67,8 +67,7 @@ export const InventoryScreen = ({ navigation, route }) => {
             setProducts(sorted);
             applyFilters(sorted, selectedFilter, searchQuery);
         } catch (error) {
-            console.error('Error loading products:', error);
-            Alert.alert('Error', 'No se pudieron cargar los productos');
+            // Error manejado silenciosamente
         } finally {
             setLoading(false);
         }
@@ -141,7 +140,6 @@ export const InventoryScreen = ({ navigation, route }) => {
                 year: 'numeric' 
             });
         } catch (error) {
-            console.error('Error formatting date:', error);
             return 'N/A';
         }
     };
@@ -209,6 +207,7 @@ export const InventoryScreen = ({ navigation, route }) => {
     );
 
     return (
+        <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
             {/* Search Bar */}
             <View style={styles.searchContainer}>
@@ -293,10 +292,15 @@ export const InventoryScreen = ({ navigation, route }) => {
                 <Text style={styles.fabText}>+</Text>
             </TouchableOpacity>
         </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -305,7 +309,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        margin: spacing.lg,
+        marginHorizontal: spacing.lg,
+        marginTop: Platform.OS === 'ios' ? spacing.md : spacing.lg,
+        marginBottom: spacing.lg,
         paddingHorizontal: spacing.md,
         borderRadius: borderRadius.md,
         ...shadows.sm,
@@ -470,10 +476,10 @@ const styles = StyleSheet.create({
     fab: {
         position: 'absolute',
         right: spacing.lg,
-        bottom: spacing.lg,
+        bottom: Platform.OS === 'ios' ? spacing.xl : spacing.lg,
         width: 56,
         height: 56,
-        borderRadius: borderRadius.full,
+        borderRadius: 28,
         backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',

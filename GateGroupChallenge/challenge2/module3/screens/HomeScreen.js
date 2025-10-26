@@ -7,6 +7,8 @@ import {
     ScrollView,
     TouchableOpacity,
     RefreshControl,
+    SafeAreaView,
+    Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, fontSize, shadows } from '../../shared/theme/colors';
@@ -55,13 +57,14 @@ export const HomeScreen = ({ navigation }) => {
     };
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.content}
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-        >
+        <SafeAreaView style={styles.safeArea}>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.content}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+            >
             {/* Header */}
             <View style={styles.header}>
                 <View>
@@ -130,17 +133,23 @@ export const HomeScreen = ({ navigation }) => {
                     </View>
                 </View>
             </View>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
     },
     content: {
         padding: spacing.lg,
+        paddingTop: Platform.OS === 'ios' ? spacing.md : spacing.lg,
     },
     header: {
         marginBottom: spacing.lg,

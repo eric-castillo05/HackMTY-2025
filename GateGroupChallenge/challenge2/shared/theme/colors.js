@@ -2,7 +2,7 @@
 
 export const colors = {
     // GateGroup Corporate Identity
-    primary: '#E30613',        // Rojo GateGroup
+    primary: '#010165',        // Azul principal
     primaryDark: '#B30510',    // Rojo oscuro
     primaryLight: '#FF1F2D',   // Rojo claro
     secondary: '#1A1A1A',      // Negro carbón
