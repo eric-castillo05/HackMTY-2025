@@ -1,5 +1,5 @@
 // challenge1/module1/services/backendService.js
-const API_BASE_URL = 'https://hackmty-2025.onrender.com';
+const API_BASE_URL = 'https://preformationary-catharine-mispacked.ngrok-free.dev';
 
 export class BackendService {
 
