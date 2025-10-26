@@ -1,8 +1,7 @@
 // challenge1/module2/index.js
 
 // Export screens
-export { DashboardScreen } from './screens/DashboardScreen';
-export { PredictionDetailsScreen } from './screens/PredictionDetailsScreen';
+export { ForecastVisualizationScreen } from './screens/ForecastVisualizationScreen';
 
 // Export components
 export { FreshnessChart } from './components/FreshnessChart';
