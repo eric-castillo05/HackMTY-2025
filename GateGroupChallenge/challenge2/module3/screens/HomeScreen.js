@@ -68,7 +68,7 @@ export const HomeScreen = ({ navigation }) => {
             {/* Header */}
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.greeting}>Buenos días</Text>
+                    <Text style={styles.greeting}>Good Morning!</Text>
                     <Text style={styles.subtitle}>Base: Monterrey (MTY)</Text>
                 </View>
             </View>
@@ -89,15 +89,15 @@ export const HomeScreen = ({ navigation }) => {
                     style={[styles.statCard, { backgroundColor: colors.warning, marginBottom: spacing.md }]}
                     onPress={() => navigation.navigate('Inventory', { filter: 'critical' })}
                 >
-                    <Text style={styles.statLabel}>Por Vencer</Text>
+                    <Text style={styles.statLabel}>To expire</Text>
                     <Text style={styles.statValue}>{stats.criticalProducts + stats.useSoonProducts}</Text>
-                    <Text style={styles.statSubtitle}>Requieren atención</Text>
+                    <Text style={styles.statSubtitle}>Attention required</Text>
                 </TouchableOpacity>
 
                 {/* Freshness Indicator */}
                 <View style={styles.freshnessCard}>
                     <View style={styles.freshnessHeader}>
-                        <Text style={styles.freshnessTitle}>Estado General de Frescura</Text>
+                        <Text style={styles.freshnessTitle}>General freshness condition</Text>
                         <Text style={[styles.freshnessPercentage, { color: getFreshnessColor() }]}>
                             {stats.freshnessPercentage}%
                         </Text>
@@ -115,19 +115,19 @@ export const HomeScreen = ({ navigation }) => {
                     </View>
                     <View style={styles.freshnessBreakdown}>
                         <View style={styles.freshnessItem}>
-                            <Text style={styles.freshnessLabel}>Frescos</Text>
+                            <Text style={styles.freshnessLabel}>Fresh</Text>
                             <Text style={[styles.freshnessCount, { color: colors.fresh }]}>{stats.freshProducts}</Text>
                         </View>
                         <View style={styles.freshnessItem}>
-                            <Text style={styles.freshnessLabel}>Usar{'\n'}Pronto</Text>
+                            <Text style={styles.freshnessLabel}>Use{'\n'}Soon</Text>
                             <Text style={[styles.freshnessCount, { color: colors.useSoon }]}>{stats.useSoonProducts}</Text>
                         </View>
                         <View style={styles.freshnessItem}>
-                            <Text style={styles.freshnessLabel}>Críticos</Text>
+                            <Text style={styles.freshnessLabel}>Critical</Text>
                             <Text style={[styles.freshnessCount, { color: colors.critical }]}>{stats.criticalProducts}</Text>
                         </View>
                         <View style={styles.freshnessItem}>
-                            <Text style={styles.freshnessLabel}>Vencidos</Text>
+                            <Text style={styles.freshnessLabel}>Expired</Text>
                             <Text style={[styles.freshnessCount, { color: colors.error }]}>{stats.expiredProducts}</Text>
                         </View>
                     </View>

@@ -60,7 +60,7 @@ export const CustomDrawerContent = (props) => {
         />
 
         <ModuleItem
-          icon="📝"
+          icon="RG"
           title="Module 3"
           subtitle="Scanner Register"
           isActive={currentRoute === 'Module3'}

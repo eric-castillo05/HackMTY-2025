@@ -40,7 +40,7 @@ export const ProductDetailScreen = ({ navigation, route }) => {
 
     const loadProduct = async () => {
         if (!productId) {
-            Alert.alert('Error', 'ID de producto no válido.');
+            Alert.alert('Error', 'Invalid ID product.');
             navigation.goBack();
             return;
         }
@@ -49,7 +49,7 @@ export const ProductDetailScreen = ({ navigation, route }) => {
             const foundProduct = await StorageService.getProductById(productId);
             
             if (!foundProduct) {
-                Alert.alert('Error', 'Producto no encontrado.');
+                Alert.alert('Error', 'Product not found.');
                 navigation.goBack();
                 return;
             }
@@ -60,7 +60,7 @@ export const ProductDetailScreen = ({ navigation, route }) => {
             
             setProduct(foundProduct);
         } catch (error) {
-            Alert.alert('Error', 'No se pudo cargar el producto.');
+            Alert.alert('Error', 'Failed to load product.');
             navigation.goBack();
         } finally {
             setLoading(false);
@@ -69,15 +69,15 @@ export const ProductDetailScreen = ({ navigation, route }) => {
 
     const handleDelete = async () => {
         Alert.alert(
-            'Confirmar Eliminación',
-            '¿Estás seguro de que deseas eliminar este producto?',
+            'Confirm Deletion',
+            'Are you sure you want to delete this product? This action cannot be undone.',
             [
                 {
-                    text: 'Cancelar',
+                    text: 'Cancel',
                     style: 'cancel'
                 },
                 {
-                    text: 'Eliminar',
+                    text: 'Delete',
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -88,12 +88,12 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                             const localResult = await StorageService.deleteProduct(productId);
                             
                             if (apiResponse.success && localResult) {
-                                Alert.alert('Éxito', 'Producto eliminado correctamente de la base de datos.');
+                                Alert.alert('Success', 'Product successfully deleted from the database.');
                                 navigation.goBack();
                             } else if (localResult) {
                                 Alert.alert(
-                                    'Eliminado Localmente',
-                                    `El producto se eliminó localmente, pero hubo un problema con el servidor.\n\nError: ${apiResponse.error || 'Desconocido'}`,
+                                    'Deleted Locally', 
+                                    `The product was deleted locally, but there was a problem with the server.\n\nError: ${apiResponse.error || 'Unknown error'}`,
                                     [
                                         {
                                             text: 'OK',
@@ -102,10 +102,10 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                                     ]
                                 );
                             } else {
-                                Alert.alert('Error', 'No se pudo eliminar el producto.');
+                                Alert.alert('Error', "Couldn't delete the product.");
                             }
                         } catch (error) {
-                            Alert.alert('Error', 'Ocurrió un error al intentar eliminar el producto.');
+                            Alert.alert('Error', 'An error occurred while deleting the product.');
                         }
                     }
                 }
@@ -121,17 +121,17 @@ export const ProductDetailScreen = ({ navigation, route }) => {
     };
 
     const getStatusText = (daysLeft) => {
-        if (daysLeft < 0) return 'VENCIDO';
-        if (daysLeft === 0) return 'VENCE HOY';
-        if (daysLeft === 1) return 'CRÍTICO';
-        if (daysLeft <= 3) return 'USAR PRONTO';
-        return 'VIGENTE';
+        if (daysLeft < 0) return 'EXPIRED';
+        if (daysLeft === 0) return 'EXPIRES TODAY';
+        if (daysLeft === 1) return 'CRITICAL';
+        if (daysLeft <= 3) return 'USE SOON';
+        return 'VALID';
     };
 
     if (loading || !product) {
         return (
             <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Cargando...</Text>
+                <Text style={styles.loadingText}>Loading...</Text>
             </View>
         );
     }
@@ -159,43 +159,43 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 {/* Details Grid */}
                 <View style={styles.detailsSection}>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>ID del Producto</Text>
+                        <Text style={styles.detailLabel}>ID Product</Text>
                         <Text style={[styles.detailValue, styles.monoText]}>{product.product_id}</Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Número de Lote</Text>
+                        <Text style={styles.detailLabel}>Batch Number</Text>
                         <Text style={[styles.detailValue, styles.monoText]}>{product.lotsName}</Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Cantidad</Text>
+                        <Text style={styles.detailLabel}>Quantity</Text>
                         <Text style={styles.detailValue}>{product.quantity} {product.mlg}</Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Unidad</Text>
+                        <Text style={styles.detailLabel}>Unit</Text>
                         <Text style={styles.detailValue}>
-                            {product.mlg === 'ml' ? 'Mililitros' : 'Miligramos'}
+                            {product.mlg === 'ml' ? 'Mililiters' : 'Miligrams'}
                         </Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Fecha de Expiración</Text>
+                        <Text style={styles.detailLabel}>Expiration Date</Text>
                         <Text style={styles.detailValue}>
                             {formatDisplayDate(product.expiry_date)}
                         </Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Días Restantes</Text>
+                        <Text style={styles.detailLabel}>Days Left</Text>
                         <Text style={[styles.detailValue, { color: statusColor }]}>
-                            {product.days_left} días
+                            {product.days_left} days
                         </Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Estado</Text>
+                        <Text style={styles.detailLabel}>Status</Text>
                         <Text style={[styles.detailValue, { color: statusColor }]}>
                             {product.status}
                         </Text>
@@ -209,7 +209,7 @@ export const ProductDetailScreen = ({ navigation, route }) => {
                 onPress={handleDelete}
             >
                 <Text style={[styles.actionButtonText, styles.deleteButtonText]}>
-                    Eliminar Producto
+                    Delete Product
                 </Text>
             </TouchableOpacity>
         </ScrollView>

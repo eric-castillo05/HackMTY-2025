@@ -25,11 +25,11 @@ export const InventoryScreen = ({ navigation, route }) => {
     const [loading, setLoading] = useState(true);
 
     const filters = [
-        { label: 'Todos', value: 'all', color: colors.text },
-        { label: 'Frescos', value: 'fresh', color: colors.fresh },
-        { label: 'Usar Pronto', value: 'useSoon', color: colors.useSoon },
-        { label: 'Críticos', value: 'critical', color: colors.critical },
-        { label: 'Vencidos', value: 'expired', color: colors.error },
+        { label: 'All', value: 'all', color: colors.text },
+        { label: 'Fresh', value: 'fresh', color: colors.fresh },
+        { label: 'Use Soon', value: 'useSoon', color: colors.useSoon },
+        { label: 'Critical', value: 'critical', color: colors.critical },
+        { label: 'Expired', value: 'expired', color: colors.error },
     ];
 
     useFocusEffect(
@@ -123,11 +123,11 @@ export const InventoryScreen = ({ navigation, route }) => {
     };
 
     const getProductStatusText = (daysLeft) => {
-        if (daysLeft < 0) return 'VENCIDO';
-        if (daysLeft === 0) return 'VENCE HOY';
-        if (daysLeft === 1) return 'CRÍTICO';
-        if (daysLeft <= 3) return 'USAR PRONTO';
-        return 'VIGENTE';
+        if (daysLeft < 0) return 'EXPIRED';
+        if (daysLeft === 0) return 'EXPIRES TODAY';
+        if (daysLeft === 1) return 'CRITICAL';
+        if (daysLeft <= 3) return 'USE SOON';
+        return 'VALID';
     };
 
     const formatDate = (dateString) => {
@@ -156,9 +156,9 @@ export const InventoryScreen = ({ navigation, route }) => {
                 <View style={styles.productHeader}>
                     <View style={styles.productInfo}>
                         <Text style={styles.productName} numberOfLines={1}>
-                            {item.product_name || 'Sin nombre'}
+                            {item.product_name || 'Nameless Product'}
                         </Text>
-                        <Text style={styles.productLot}>Lote: {item.lotsName || 'N/A'}</Text>
+                        <Text style={styles.productLot}>Batch: {item.lotsName || 'N/A'}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
                         <Text style={styles.statusBadgeText}>{statusText}</Text>
@@ -167,17 +167,17 @@ export const InventoryScreen = ({ navigation, route }) => {
                 
                 <View style={styles.productFooter}>
                     <View style={styles.productDetailItem}>
-                        <Text style={styles.productDetailLabel}>Cantidad</Text>
+                        <Text style={styles.productDetailLabel}>Quantity</Text>
                         <Text style={styles.productDetailValue}>{item.quantity || '0'} {item.mlg || 'ml'}</Text>
                     </View>
                     <View style={styles.productDetailItem}>
-                        <Text style={styles.productDetailLabel}>Vence</Text>
+                        <Text style={styles.productDetailLabel}>Expires</Text>
                         <Text style={styles.productDetailValue}>
                             {formatDate(item.expiry_date)}
                         </Text>
                     </View>
                     <View style={styles.productDetailItem}>
-                        <Text style={styles.productDetailLabel}>Días Restantes</Text>
+                        <Text style={styles.productDetailLabel}>Days Left</Text>
                         <Text style={[styles.productDetailValue, styles.daysLeftValue, { color: statusColor }]}>
                             {item.days_left}
                         </Text>
@@ -189,18 +189,18 @@ export const InventoryScreen = ({ navigation, route }) => {
 
     const renderEmptyState = () => (
         <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No hay productos</Text>
+            <Text style={styles.emptyTitle}>No products</Text>
             <Text style={styles.emptyDescription}>
                 {searchQuery
-                    ? 'No se encontraron productos con ese criterio'
-                    : 'Registra tu primer producto para comenzar'}
+                    ? 'No products were found with that criteria'
+                    : 'Register your first product to get started'}
             </Text>
             {!searchQuery && (
                 <TouchableOpacity
                     style={styles.emptyButton}
                     onPress={() => navigation.navigate('RegisterLot')}
                 >
-                    <Text style={styles.emptyButtonText}>Registrar Producto</Text>
+                    <Text style={styles.emptyButtonText}>Register Product</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -263,11 +263,11 @@ export const InventoryScreen = ({ navigation, route }) => {
             {/* Results Count */}
             <View style={styles.resultsHeader}>
                 <Text style={styles.resultsCount}>
-                    {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''}
+                    {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
                 </Text>
                 {selectedFilter !== 'all' && (
                     <TouchableOpacity onPress={() => handleFilterChange('all')}>
-                        <Text style={styles.clearFilter}>Limpiar filtro</Text>
+                        <Text style={styles.clearFilter}>Clear filter</Text>
                     </TouchableOpacity>
                 )}
             </View>

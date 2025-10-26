@@ -76,7 +76,7 @@ const TabNavigator = () => {
                 name="Home"
                 component={HomeScreen}
                 options={{
-                    title: 'Inicio',
+                    title: 'Home',
                     tabBarIcon: ({ color, size }) => (
                         <TabBarIcon name="Home" color={color} size={size} />
                     ),
@@ -87,7 +87,7 @@ const TabNavigator = () => {
                 name="Scanner"
                 component={ScannerScreen}
                 options={{
-                    title: 'Escanear',
+                    title: 'Scannner',
                     tabBarIcon: ({ color, size }) => (
                         <TabBarIcon name="Scanner" color={color} size={size} />
                     ),
@@ -98,7 +98,7 @@ const TabNavigator = () => {
                 name="Inventory"
                 component={InventoryScreen}
                 options={{
-                    title: 'Inventario',
+                    title: 'Inventory',
                     tabBarIcon: ({ color, size }) => (
                         <TabBarIcon name="Inventory" color={color} size={size} />
                     ),
@@ -121,7 +121,7 @@ export const Module3Navigator = () => {
                 headerTitleStyle: {
                     fontWeight: '700',
                 },
-                headerBackTitle: 'Atrás',
+                headerBackTitle: 'Back',
             }}
         >
             <Stack.Screen
@@ -133,7 +133,7 @@ export const Module3Navigator = () => {
                 name="RegisterLot"
                 component={RegisterLotScreen}
                 options={{
-                    title: 'Registrar Lote',
+                    title: 'Register batch',
                     presentation: 'modal',
                     headerLeft: () => null,
                 }}
@@ -142,7 +142,7 @@ export const Module3Navigator = () => {
                 name="ProductDetail"
                 component={ProductDetailScreen}
                 options={{
-                    title: 'Detalle del Producto',
+                    title: 'Product Details',
                 }}
             />
         </Stack.Navigator>
